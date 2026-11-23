@@ -147,6 +147,7 @@
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
       if (VC.weather) VC.weather.forceState('STORM');
+      if (VC.PoliceAir) VC.PoliceAir.seedOverhead(chaseX, chaseY, 0);
 
     // ── mission (new) ──────────────────────────────────────────────────────
     } else if (shot === 'mission') {
@@ -296,6 +297,7 @@
       if (VC.Weapons) VC.Weapons.update(dt);
       if (VC.wanted)  VC.wanted.update(dt);
       if (VC.police)  VC.police.update(dt, VC.player, gameTime);
+      if (VC.PoliceAir) VC.PoliceAir.update(dt, VC.player, VC.city, gameTime);
       if (VC.Missions) VC.Missions.update(dt, VC.player);
       if (VC.combat)  VC.combat.update(dt, VC.player);
 

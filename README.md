@@ -35,6 +35,7 @@ node serve.ts
 - Cycle weapons: `Q`
 - Handbrake / pause mission dialog: `Space`
 - Open the satellite map: `M` or `Tab`
+- Police air support activates at 3 wanted stars: evade the moving searchlight
 - Pause / resume: `Escape`
 - Save: `F5`
 - Load: `F9`
@@ -42,6 +43,7 @@ node serve.ts
 - Close mission dialog: `Space`
 - Toggle synth radio: `Comma` (`,`)
 - Save/load or return: in-game menu
+- Police air support: no extra key; it launches automatically at 3 wanted stars
 
 ## Features
 
@@ -51,6 +53,9 @@ node serve.ts
 - Crowded, moving pedestrians
 - Wanted stars and escalating police response
 - Pursuit AI, interceptors, sirens, and patrol chases
+- Police air support with a visible VPD AIR ONE helicopter, sweeping searchlight, minimap altitude icon, rotor audio, and 3+ star escalation
+- Enter building shadows or tunnel underpasses to break the helicopter searchlight lock
+- Reworked HUD spacing: separate radio and weather rows above the minimap, aligned pursuit, mission, cash, and wanted panels
 - Story missions with dialogue and objective panels
 - Hand-to-hand and ranged combat
 - Minimap radar and full-screen satellite map

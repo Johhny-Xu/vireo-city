@@ -12,6 +12,8 @@
   var sirenTimer = null;
   var engineOsc = null;
   var engineGain = null;
+  var helicopterOsc = null;
+  var helicopterGain = null;
 
   function getAudioContext() {
     if (!audioCtx) {
@@ -236,6 +238,38 @@
         sirenOsc = null;
       }
       sirenGain = null;
+    },
+
+    setHelicopterHum: function(active, speedNorm) {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      var now = ctx.currentTime;
+      if (active && !helicopterOsc) {
+        helicopterOsc = ctx.createOscillator();
+        helicopterGain = ctx.createGain();
+        helicopterOsc.type = 'sawtooth';
+        helicopterOsc.frequency.setValueAtTime(38, now);
+        helicopterGain.gain.setValueAtTime(0.018, now);
+        helicopterOsc.connect(helicopterGain);
+        helicopterGain.connect(ctx.destination);
+        helicopterOsc.start(now);
+      } else if (!active && helicopterOsc) {
+        helicopterGain.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+        var oldOsc = helicopterOsc;
+        var oldGain = helicopterGain;
+        setTimeout(function() {
+          try { oldOsc.stop(); oldOsc.disconnect(); oldGain.disconnect(); } catch (e) {}
+        }, 140);
+        helicopterOsc = null;
+        helicopterGain = null;
+      } else if (active && helicopterOsc) {
+        var target = 38 + (speedNorm || 0) * 34;
+        helicopterOsc.frequency.cancelScheduledValues(now);
+        helicopterOsc.frequency.linearRampToValueAtTime(target, now + 0.12);
+        helicopterGain.gain.cancelScheduledValues(now);
+        helicopterGain.gain.linearRampToValueAtTime(0.018 + (speedNorm || 0) * 0.018, now + 0.12);
+      }
     },
 
     setEngineHum: function(speedNorm) {

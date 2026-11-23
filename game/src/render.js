@@ -41,6 +41,8 @@
 
       // 7b. Police siren light blobs (in world-space, additive)
       if (VC.police) VC.police.renderSirenLights(ctx, timeSec);
+      // 7b2. Police helicopter, searchlight ellipse, rotor shadow and trail
+      if (VC.PoliceAir) VC.PoliceAir.renderWorld(ctx, VC.camera, player, timeSec);
 
       // 7c. Weapon world effects (tracers, muzzle flash, shell casings, decals)
       if (VC.Weapons) VC.Weapons.renderWorldEffects(ctx);

@@ -145,28 +145,37 @@
 
       // 6. Toasts
       this.renderToasts(ctx);
+      if ((VC.wanted ? VC.wanted.level : player.wantedLevel) >= 3) {
+        this.renderPursuitBanner(ctx, player, timeSec);
+      }
 
-      // 7. Minimap
+      // 7. Police air-support radio/status, kept above minimap
+      if (VC.PoliceAir) {
+        VC.PoliceAir.renderRadio(ctx);
+        VC.PoliceAir.renderHudStatus(ctx);
+      }
+
+      // 8. Minimap
       if (VC.Minimap) VC.Minimap.render(ctx, player, city, timeSec);
 
-      // 8. Full map overlay
+      // 9. Full map overlay
       if (showFullMap) {
         if (VC.Minimap) VC.Minimap.renderFullMap(ctx, player, city);
         else this.renderMapOverlay(ctx, player, city);
       }
 
-      // 9. Radio banner (upper-right, clear of the bottom minimap)
+      // 10. Radio banner (above minimap, weather in a separate row)
       this.renderRadioBanner(ctx, timeSec);
 
-      // 10. GAME SAVED toast (center-bottom)
+      // 11. GAME SAVED toast (center-bottom)
       if (savedToast > 0) this.renderSavedToast(ctx, savedToast);
 
-      // 11. Mission complete banner
+      // 12. Mission complete banner
       if (VC.Missions && VC.Missions.state.banner) {
         this.renderMissionBanner(ctx, VC.Missions.state.banner, timeSec);
       }
 
-      // 12. Mission briefing dialog
+      // 13. Mission briefing dialog
       if (VC.Missions && VC.Missions.state.dialog) {
         this.renderMissionDialog(ctx, VC.Missions.state.dialog, timeSec);
       }
@@ -455,7 +464,8 @@
 
     // ── Toasts ────────────────────────────────────────────────────────────────
     renderToasts: function(ctx) {
-      var startY = 110, rightX = 1252;
+      var wanted = VC.wanted ? VC.wanted.level : 0;
+      var startY = wanted >= 3 ? 156 : 110, rightX = 1252;
       for (var i = 0; i < toasts.length; i++) {
         var t = toasts[i];
         var alpha = Math.min(1, t.time / 0.5);
@@ -470,9 +480,33 @@
       }
     },
 
-    // ── Radio banner (above minimap, with a 17px vertical gap) ───────────────
+    renderPursuitBanner: function(ctx, player, timeSec) {
+      var w = 274, h = 34, x = 1252 - w, y = 112;
+      ctx.save();
+      ctx.fillStyle = 'rgba(18,8,16,0.92)';
+      ctx.strokeStyle = 'rgba(255,34,68,0.72)';
+      ctx.lineWidth = 1.5;
+      VC.roundRect(ctx, x, y, w, h, 5);
+      ctx.fill(); ctx.stroke();
+      var flash = Math.sin((timeSec || 0) * 9) > 0;
+      ctx.fillStyle = flash ? '#ff2244' : '#00aaff';
+      ctx.shadowColor = ctx.fillStyle;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(x + 14, y + h / 2, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.font = 'bold 11px "Courier New", monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffd3dc';
+      ctx.fillText('PURSUIT UNIT ACTIVE', x + 26, y + h / 2);
+      ctx.restore();
+    },
+
+    // ── Radio and weather banners (separate rows above minimap) ─────────────
     renderRadioBanner: function(ctx, timeSec) {
-      var rx = 1252, ry = 550, rw = 274, rh = 42, x = rx - rw;
+      var rx = 1252, ry = 516, rw = 274, rh = 38, x = rx - rw;
       var station = RADIO_STATIONS[radioIndex];
       ctx.save();
       ctx.fillStyle = 'rgba(6,10,18,0.78)';
@@ -485,22 +519,40 @@
       ctx.fillStyle = '#ff88cc';
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillText('\u266b ' + station.station, x + 10, ry + 6);
-      if (VC.weather) {
-        ctx.font = 'bold 8px monospace';
-        ctx.fillStyle = VC.weather.state === 'STORM' ? '#bda7ff' : '#88dfff';
-        ctx.textAlign = 'right';
-        ctx.fillText(VC.weather.state.replace('_', ' ') + '  ' +
-          Math.round(VC.weather.rainIntensity * 100) + '%', x + rw - 8, ry + 7);
-      }
 
-      // Scroll the track name
+      // Track name is fitted to one line; it is never wrapped or redrawn.
       var trackText = station.track;
-      ctx.font = '9px monospace';
+      var trackFontSize = 10;
+      ctx.font = '10px monospace';
+      while (ctx.measureText(trackText).width > rw - 20 && trackFontSize > 8) {
+        trackFontSize -= 0.5;
+        ctx.font = trackFontSize + 'px monospace';
+      }
       ctx.fillStyle = '#cc88aa';
       ctx.textBaseline = 'top';
-      ctx.fillText(trackText, x + 10, ry + 24, rw - 20);
-
+      ctx.fillText(trackText, x + 10, ry + 24);
       ctx.restore();
+
+      // Separate weather status row
+      if (VC.weather) {
+        var wy = 558, wh = 28;
+        ctx.save();
+        ctx.fillStyle = 'rgba(6,12,22,0.82)';
+        ctx.strokeStyle = VC.weather.state === 'STORM' ? 'rgba(189,167,255,0.55)' : 'rgba(136,223,255,0.40)';
+        ctx.lineWidth = 1;
+        VC.roundRect(ctx, x, wy, rw, wh, 4);
+        ctx.fill(); ctx.stroke();
+        ctx.font = 'bold 9px "Courier New", monospace';
+        ctx.fillStyle = VC.weather.state === 'STORM' ? '#bda7ff' : '#88dfff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\u25a6 WEATHER', x + 10, wy + wh / 2);
+        ctx.textAlign = 'right';
+        ctx.fillText(VC.weather.state.replace('_', ' ') + '  ' +
+          Math.round(VC.weather.rainIntensity * 100) + '%', x + rw - 10, wy + wh / 2);
+        ctx.restore();
+      }
+
     },
 
     // ── GAME SAVED toast (center) ────────────────────────────────────────────

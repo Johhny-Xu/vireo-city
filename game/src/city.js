@@ -47,6 +47,10 @@
       parkedCars: [],
       props: [],
       trees: [],
+      tunnels: [
+        { x: 740, y: 2 * STEP + ROAD_WIDTH - 54, w: 270, h: 54, name: 'VICE UNDERPASS' },
+        { x: 4 * STEP + ROAD_WIDTH - 135, y: 4 * STEP + ROAD_WIDTH + 10, w: 54, h: 270, name: 'CANAL TUNNEL' }
+      ],
       waterfront: null,
       pier: null,
       parkingLot: null,

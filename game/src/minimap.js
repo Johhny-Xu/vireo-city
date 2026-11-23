@@ -155,6 +155,31 @@
         }
       }
 
+      // VPD AIR ONE: dedicated helicopter blip with an altitude badge
+      if (VC.PoliceAir && VC.PoliceAir.active) {
+        var ahx = cx + (VC.PoliceAir.x - focusX) * scale;
+        var ahy = cy + (VC.PoliceAir.y - focusY) * scale;
+        if (Math.hypot(ahx - cx, ahy - cy) < r - 4) {
+          ctx.save();
+          ctx.fillStyle = '#ff2244';
+          ctx.shadowColor = '#ff2244';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.moveTo(ahx, ahy - 7);
+          ctx.lineTo(ahx + 7, ahy + 6);
+          ctx.lineTo(ahx - 7, ahy + 6);
+          ctx.closePath();
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = '#e8f5ff';
+          ctx.font = 'bold 7px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText('A1 ' + (VC.PoliceAir.altitude || 280) + 'ft', ahx, ahy + 7);
+          ctx.restore();
+        }
+      }
+
       // Draw Mission Marker (pulsing gold/orange diamond)
       var missionX = 1420;
       var missionY = 705;
@@ -355,6 +380,25 @@
           ctx.arc(tx, ty, 3, 0, Math.PI * 2);
           ctx.fill();
         }
+      }
+
+      if (VC.PoliceAir && VC.PoliceAir.active) {
+        var fax = mapX + VC.PoliceAir.x * scaleX;
+        var fay = mapY + VC.PoliceAir.y * scaleY;
+        ctx.fillStyle = '#ff2244';
+        ctx.shadowColor = '#ff2244';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(fax, fay - 8);
+        ctx.lineTo(fax + 8, fay + 7);
+        ctx.lineTo(fax - 8, fay + 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffccd5';
+        ctx.fillText('AIR ONE ' + VC.PoliceAir.altitude + 'ft', fax, fay + 11);
       }
 
       // Draw Mission Objective
