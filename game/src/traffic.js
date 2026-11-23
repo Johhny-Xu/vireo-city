@@ -216,6 +216,19 @@
       for (var i = 0; i < this.vehicles.length; i++) {
         var tc = this.vehicles[i];
         this.updateCarAI(tc, dt, city, player, gameTime, i);
+        var tv = tc.vehicle;
+        if (tv.exploded) continue;
+        if (player && player.vehicle && player.vehicle !== tv) {
+          var dist = Math.hypot(player.vehicle.x - tv.x, player.vehicle.y - tv.y);
+          if (dist < 38) {
+            var impact = Math.abs(player.vehicle.speed - tv.speed);
+            if (impact > 145) {
+              tv.damage(Math.round(impact * 0.18));
+              player.vehicle.damage(Math.round(impact * 0.12));
+              if (VC.wanted && impact > 220) VC.wanted.addCrime('rammed_police', player);
+            }
+          }
+        }
       }
     },
 

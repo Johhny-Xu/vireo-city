@@ -298,6 +298,7 @@
       if (VC.wanted)  VC.wanted.update(dt);
       if (VC.police)  VC.police.update(dt, VC.player, gameTime);
       if (VC.PoliceAir) VC.PoliceAir.update(dt, VC.player, VC.city, gameTime);
+      if (VC.updateVehicleEffects) VC.updateVehicleEffects(dt);
       if (VC.Missions) VC.Missions.update(dt, VC.player);
       if (VC.combat)  VC.combat.update(dt, VC.player);
 

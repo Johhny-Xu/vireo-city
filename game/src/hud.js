@@ -255,8 +255,8 @@
       VC.roundRect(ctx, boxX, starBoxY, boxW, starBoxH, 4);
       ctx.fill(); ctx.stroke();
 
-      for (var s = 0; s < 5; s++) {
-        var sx = boxX + 24 + s * 38, sy = starBoxY + starBoxH / 2;
+      for (var s = 0; s < 6; s++) {
+        var sx = boxX + 20 + s * 34, sy = starBoxY + starBoxH / 2;
         var isActive = s < wanted;
         drawStar(ctx, sx, sy, 5, 9, 4.5);
         if (isActive) {
@@ -281,6 +281,22 @@
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText(label, boxX + boxW - 8, starBoxY + starBoxH / 2);
+      }
+
+      // Evade decay progress: fills as one star is being lost
+      if (isDecaying && wanted > 0) {
+        var frac = VC.wanted ? VC.wanted.decayFraction() : 0;
+        var barY = starBoxY + starBoxH + 7;
+        ctx.fillStyle = 'rgba(8,14,24,0.88)';
+        ctx.strokeStyle = 'rgba(255,170,68,0.45)';
+        VC.roundRect(ctx, boxX, barY, boxW, 8, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffb12b';
+        ctx.fillRect(boxX + 2, barY + 2, (boxW - 4) * Math.max(0, Math.min(1, frac)), 4);
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffb12b';
+        ctx.fillText('EVADING / 隐藏中', boxX, barY + 15);
       }
     },
 

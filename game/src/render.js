@@ -41,11 +41,14 @@
 
       // 7b. Police siren light blobs (in world-space, additive)
       if (VC.police) VC.police.renderSirenLights(ctx, timeSec);
+      if (VC.police) VC.police.renderRoadblocks(ctx, timeSec);
       // 7b2. Police helicopter, searchlight ellipse, rotor shadow and trail
       if (VC.PoliceAir) VC.PoliceAir.renderWorld(ctx, VC.camera, player, timeSec);
 
       // 7c. Weapon world effects (tracers, muzzle flash, shell casings, decals)
       if (VC.Weapons) VC.Weapons.renderWorldEffects(ctx);
+
+      if (VC.renderVehicleEffects) VC.renderVehicleEffects(ctx);
 
       // 7d. Mission marker ring
       if (VC.Missions) VC.Missions.renderWorldMarker(ctx, timeSec);
@@ -188,6 +191,27 @@
           ctx.lineTo(rd.x + rd.w - 3, rd.y + rd.h);
           ctx.stroke();
         }
+      }
+
+      // Concealment zones: deep tunnel shadow and dark building overhang
+      if (city.tunnels) {
+        ctx.save();
+        for (var ti = 0; ti < city.tunnels.length; ti++) {
+          var tun = city.tunnels[ti];
+          if (tun.x + tun.w < view.left || tun.x > view.right || tun.y + tun.h < view.top || tun.y > view.bottom) continue;
+          ctx.fillStyle = 'rgba(0,3,8,0.82)';
+          ctx.fillRect(tun.x, tun.y, tun.w, tun.h);
+          ctx.strokeStyle = 'rgba(110,145,170,0.38)';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(tun.x + 2, tun.y + 2, tun.w - 4, tun.h - 4);
+          ctx.fillStyle = 'rgba(90,125,150,0.22)';
+          ctx.fillRect(tun.x + 12, tun.y + 8, tun.w - 24, 4);
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#9fb7c8';
+          ctx.fillText(tun.name, tun.x + tun.w / 2, tun.y + tun.h / 2);
+        }
+        ctx.restore();
       }
 
       // 3. Intersections: Crosswalk zebra stripes & stop lines

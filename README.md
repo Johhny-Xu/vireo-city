@@ -44,6 +44,10 @@ node serve.ts
 - Toggle synth radio: `Comma` (`,`)
 - Save/load or return: in-game menu
 - Police air support: no extra key; it launches automatically at 3 wanted stars
+- Evading: no key; stay outside police, patrol lights, and helicopter searchlights until the EVADING progress bar completes
+- Roadblocks: appear ahead at 4+ stars; brake or steer around them
+- Heavy units: armored interceptors and dismounted officers deploy at 6 stars
+- Vehicle fire: severely damage a vehicle (especially in police/roadblock impacts) to trigger an explosion
 
 ## Features
 
@@ -52,6 +56,11 @@ node serve.ts
 - Live road traffic
 - Crowded, moving pedestrians
 - Wanted stars and escalating police response
+- Police roadblocks at 4+ wanted stars: VPD cruisers, flashing lights, cones, warning banners, collision damage, and a 3-unit on-screen cap
+- Heavy 6-star response: armored interceptors with stronger ramming damage and reusable foot officers that use cover and return to vehicles while the player is hidden
+- Evading and concealment: sights and police searchlights reset wanted decay; building shadows, tunnel and canal underpasses immediately break line of sight
+- HUD evasion feedback: EVADING / 隐藏中 label, wanted-star decay progress bar, red screen-edge detection warning, siren proximity, and pursuit banners
+- Explosive vehicles: smoke, fire, shockwaves, debris, fragments, blast damage, explosion audio, and chain escalation of wanted level
 - Pursuit AI, interceptors, sirens, and patrol chases
 - Police air support with a visible VPD AIR ONE helicopter, sweeping searchlight, minimap altitude icon, rotor audio, and 3+ star escalation
 - Enter building shadows or tunnel underpasses to break the helicopter searchlight lock

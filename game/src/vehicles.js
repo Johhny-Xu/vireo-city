@@ -6,6 +6,8 @@
 
   // Global skid marks buffer
   VC.skidmarks = VC.skidmarks || [];
+  var vehicleExplosions = [];
+  var explosionFragments = [];
 
   function addSkidmark(x1, y1, x2, y2, alpha) {
     if (VC.skidmarks.length > 250) {
@@ -200,6 +202,9 @@
 
     this.damageFlash = 0;
     this.smokePuffTimer = 0;
+    this.exploded = false;
+    this.explosionChecked = false;
+    this.roadblockStuck = 0;
   }
 
   Vehicle.prototype.getSpeedKmH = function() {
@@ -312,9 +317,11 @@
   };
 
   Vehicle.prototype.damage = function(amount) {
+    if (this.exploded) return;
     this.health = Math.max(0, this.health - amount);
     this.damageFlash = 0.22;
     if (VC.Audio) VC.Audio.gunshot();
+    if (this.health <= 0) explodeVehicle(this);
   };
 
   Vehicle.prototype.repair = function(amount) {
@@ -322,6 +329,8 @@
   };
 
   Vehicle.prototype.update = function(dt, city) {
+    if (this.roadblockStuck > 0) this.roadblockStuck = Math.max(0, this.roadblockStuck - dt);
+    if (this.health <= 0 && !this.exploded) explodeVehicle(this);
     if (this.damageFlash > 0) {
       this.damageFlash = Math.max(0, this.damageFlash - dt);
     }
@@ -645,4 +654,115 @@
   };
 
   VC.Vehicle = Vehicle;
+
+  function explodeVehicle(vehicle) {
+    if (!vehicle || vehicle.exploded) return;
+    vehicle.exploded = true;
+    vehicle.health = 0;
+    vehicle.speed = 0;
+    vehicle.vx = 0;
+    vehicle.vy = 0;
+
+    vehicleExplosions.push({
+      x: vehicle.x, y: vehicle.y, radius: 10, life: 1.25, maxLife: 1.25,
+      flash: 1
+    });
+    for (var i = 0; i < 28; i++) {
+      var ang = Math.random() * Math.PI * 2;
+      var spd = 70 + Math.random() * 220;
+      explosionFragments.push({
+        x: vehicle.x, y: vehicle.y,
+        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+        life: 0.5 + Math.random() * 1.1,
+        maxLife: 1.6,
+        size: 2 + Math.random() * 5
+      });
+    }
+
+    if (VC.Audio) {
+      VC.Audio.explosion();
+      VC.Audio.startSiren();
+    }
+    if (VC.hud) VC.hud.toast('载具爆炸 // 周边警力已警戒', 2.8);
+
+    if (VC.wanted) {
+      var cur = VC.wanted.level;
+      VC.wanted.setLevel(Math.min(5, cur + 1), VC.player);
+    }
+
+    var blastRadius = 190;
+    if (VC.player) {
+      var pd = Math.hypot(VC.player.x - vehicle.x, VC.player.y - vehicle.y);
+      if (pd < blastRadius && VC.combat) {
+        VC.combat.applyDamage(VC.player, Math.round(25 * (1 - pd / blastRadius)), vehicle.x, vehicle.y);
+      }
+    }
+    if (VC.traffic) {
+      for (var t = VC.traffic.vehicles.length - 1; t >= 0; t--) {
+        var tv = VC.traffic.vehicles[t].vehicle;
+        if (tv !== vehicle && Math.hypot(tv.x - vehicle.x, tv.y - vehicle.y) < blastRadius) {
+          tv.damage(45);
+        }
+      }
+    }
+    if (VC.police) {
+      for (var c = VC.police.cruisers.length - 1; c >= 0; c--) {
+        var pv = VC.police.cruisers[c].vehicle;
+        if (Math.hypot(pv.x - vehicle.x, pv.y - vehicle.y) < blastRadius) pv.damage(55);
+      }
+      for (var f = 0; f < VC.police.footOfficers.length; f++) {
+        var fo = VC.police.footOfficers[f];
+        if (Math.hypot(fo.x - vehicle.x, fo.y - vehicle.y) < blastRadius && VC.combat) {
+          fo.health = Math.max(0, fo.health - 30);
+        }
+      }
+    }
+  }
+
+  function updateExplosionEffects(dt) {
+    for (var i = vehicleExplosions.length - 1; i >= 0; i--) {
+      vehicleExplosions[i].life -= dt;
+      vehicleExplosions[i].radius += dt * 210;
+      if (vehicleExplosions[i].life <= 0) vehicleExplosions.splice(i, 1);
+    }
+    for (var j = explosionFragments.length - 1; j >= 0; j--) {
+      var p = explosionFragments[j];
+      p.life -= dt;
+      p.vx *= Math.max(0, 1 - dt * 1.4);
+      p.vy *= Math.max(0, 1 - dt * 1.4);
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.life <= 0) explosionFragments.splice(j, 1);
+    }
+  }
+
+  function renderExplosionEffects(ctx) {
+    for (var i = 0; i < vehicleExplosions.length; i++) {
+      var e = vehicleExplosions[i];
+      var alpha = Math.max(0, e.life / e.maxLife);
+      var g = ctx.createRadialGradient(e.x, e.y, 4, e.x, e.y, e.radius);
+      g.addColorStop(0, 'rgba(255,250,180,' + alpha + ')');
+      g.addColorStop(0.25, 'rgba(255,120,20,' + (alpha * 0.95) + ')');
+      g.addColorStop(0.65, 'rgba(160,28,12,' + (alpha * 0.45) + ')');
+      g.addColorStop(1, 'rgba(20,8,8,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,210,120,' + (alpha * 0.8) + ')';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.radius * 0.82, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    for (var j = 0; j < explosionFragments.length; j++) {
+      var p = explosionFragments[j];
+      ctx.fillStyle = 'rgba(255,' + (120 + Math.floor(100 * p.life / p.maxLife)) + ',40,0.9)';
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    }
+  }
+
+  VC.explodeVehicle = explodeVehicle;
+  VC.updateVehicleEffects = updateExplosionEffects;
+  VC.renderVehicleEffects = renderExplosionEffects;
 })();

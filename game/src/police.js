@@ -11,21 +11,28 @@
   var FOOT_SHOOT_RANGE  = 180;
   var SHOOT_INTERVAL    = 1.4;    // seconds between officer shots
   var SIREN_FLICKER_HZ  = 2.4;    // times per second for the siren flash
-  var MAX_CRUISERS      = 4;
+  var MAX_CRUISERS      = 5;
   var SPAWN_DIST        = 650;    // spawn outside this range from player
   var DESPAWN_DIST      = 1200;
 
   // Foot officer spawns at 3+ stars
-  var MAX_FOOT_OFFICERS = 3;
+  var MAX_FOOT_OFFICERS = 4;
+  var MAX_ROADBLOCKS = 3;
 
   // ── State ──────────────────────────────────────────────────────────────────
   var cruisers = [];        // { vehicle: VC.Vehicle, ai: {...}, shootTimer: 0, sirenPhase: 0 }
   var footOfficers = [];    // { x, y, vx, vy, shootTimer, dead }
+  var roadblocks = [];
+  var roadblockTimer = 0;
   var spawnTimer = 0;
   var footSpawnTimer = 0;
   var active = false;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+  function wantedLevel() {
+    return VC.wanted ? VC.wanted.level : 0;
+  }
+
   function spawnCruiser(player) {
     if (!VC.city || !player) return;
     // Spawn on a road segment near the player but outside sight
@@ -37,18 +44,30 @@
     sx = Math.max(50, Math.min(VC.city.worldWidth - 50, sx));
     sy = Math.max(50, Math.min(VC.city.worldHeight - 50, sy));
 
-    var v = new VC.Vehicle('interceptor', sx, sy, angle);
+    var heavy = wantedLevel() >= 6;
+    var v = new VC.Vehicle(heavy ? 'ranger' : 'interceptor', sx, sy, angle);
     v.speed = 0;
     v.lightsOn = true;
     // Mark this as a police car (affects wanted crime if rammed)
     v.isPolice = true;
+    if (heavy) {
+      v.health = 180;
+      v.maxHealth = 180;
+      v.color = '#263238';
+      v.ramPower = 1.8;
+      v.heavy = true;
+      v.sirenOn = true;
+    } else {
+      v.ramPower = 1.0;
+    }
 
     cruisers.push({
       vehicle: v,
       shootTimer: SHOOT_INTERVAL,
       sirenPhase: Math.random() * Math.PI * 2,
       state: 'chase',   // 'chase' | 'ram' | 'disabled'
-      disabled: false
+      disabled: false,
+      heavy: heavy
     });
   }
 
@@ -63,6 +82,32 @@
       shootTimer: SHOOT_INTERVAL * (0.8 + Math.random() * 0.4),
       dead: false,
       health: 40
+    });
+  }
+
+  function spawnRoadblock(player) {
+    if (!VC.city || !player || roadblocks.length >= MAX_ROADBLOCKS) return;
+    var ahead = player.vehicle ? player.vehicle.heading : player.facing;
+    var candidates = [];
+    for (var i = 0; i < VC.city.intersections.length; i++) {
+      var inter = VC.city.intersections[i];
+      var cx = inter.x + inter.w * 0.5;
+      var cy = inter.y + inter.h * 0.5;
+      var dx = cx - player.x, dy = cy - player.y;
+      var dist = Math.hypot(dx, dy);
+      var dot = (dx * Math.cos(ahead) + dy * Math.sin(ahead)) / Math.max(1, dist);
+      if (dist > 220 && dist < 520 && dot > 0.55) candidates.push({ x: cx, y: cy, dist: dist });
+    }
+    if (!candidates.length) return;
+    candidates.sort(function(a, b) { return a.dist - b.dist; });
+    var p = candidates[0];
+    var horizontal = Math.abs(Math.cos(ahead)) >= Math.abs(Math.sin(ahead));
+    roadblocks.push({
+      x: p.x, y: p.y,
+      heading: horizontal ? 0 : Math.PI / 2,
+      life: 34,
+      flash: Math.random() * Math.PI * 2,
+      damagedTimer: 0
     });
   }
 
@@ -97,6 +142,7 @@
   var Police = {
     cruisers: cruisers,
     footOfficers: footOfficers,
+    roadblocks: roadblocks,
 
     onWantedLevelChange: function(level) {
       active = level > 0;
@@ -104,8 +150,11 @@
         // All units stand down
         cruisers.length = 0;
         footOfficers.length = 0;
+        roadblocks.length = 0;
         spawnTimer = 0;
         footSpawnTimer = 0;
+        roadblockTimer = 0;
+        if (VC.Audio) VC.Audio.stopSiren();
       }
     },
 
@@ -123,6 +172,36 @@
       if (!player || !active) return;
 
       var wanted = VC.wanted ? VC.wanted.level : (player.wantedLevel || 0);
+
+      // Roadblocks begin at 4 stars and recycle on the busiest intersections ahead
+      roadblockTimer -= dt;
+      if (wanted >= 4 && roadblockTimer <= 0) {
+        spawnRoadblock(player);
+        roadblockTimer = 12 + (6 - wanted) * 1.8;
+      }
+      for (var rb = roadblocks.length - 1; rb >= 0; rb--) {
+        var block = roadblocks[rb];
+        block.life -= dt;
+        block.flash += dt * 7;
+        if (block.life <= 0 || Math.hypot(player.x - block.x, player.y - block.y) > 900) {
+          roadblocks.splice(rb, 1);
+          continue;
+        }
+        if (player.vehicle) {
+          var bd = Math.hypot(player.vehicle.x - block.x, player.vehicle.y - block.y);
+          if (bd < 58) {
+            var impact = Math.abs(player.vehicle.speed);
+            block.damagedTimer = 0.55;
+            player.vehicle.roadblockStuck = 1.1;
+            player.vehicle.speed *= impact > 180 ? -0.18 : -0.28;
+            if (impact > 75) player.vehicle.damage(Math.round(Math.min(42, impact * 0.28)));
+            if (VC.combat) VC.combat.applyDamage(player, impact > 220 ? 16 : 8, block.x, block.y);
+            if (VC.hud) VC.hud.toast('路障撞击 // VEHICLE DAMAGED', 1.2);
+            player.vehicle.x += (player.vehicle.x - block.x) * 0.12;
+            player.vehicle.y += (player.vehicle.y - block.y) * 0.12;
+          }
+        }
+      }
 
       // ── Spawn cruisers ──────────────────────────────────────────────────────
       spawnTimer -= dt;
@@ -144,6 +223,12 @@
         var c = cruisers[i];
         var v = c.vehicle;
 
+        if (v.exploded || v.health <= 0) {
+          if (v.exploded) VC.explodeVehicle(v);
+          cruisers.splice(i, 1);
+          continue;
+        }
+
         // Despawn if too far away
         var dToPl = Math.hypot(player.x - v.x, player.y - v.y);
         if (dToPl > DESPAWN_DIST) {
@@ -155,9 +240,8 @@
         if (v.driver === player) continue;
 
         // Police see the player → reset decay
-        if (dToPl < SIGHT_RANGE && VC.wanted) {
-          VC.wanted.registerPoliceSpot();
-        }
+        var concealed = VC.wanted ? VC.wanted.isPlayerConcealed(player, VC.city) : false;
+        if (dToPl < SIGHT_RANGE && !concealed && VC.wanted) VC.wanted.registerPoliceSpot();
 
         // ── Chase / ram ──
         if (!c.disabled) {
@@ -192,11 +276,13 @@
           var vehicleRadiusSum = 36; // rough combined half-widths
           if (ramDist < vehicleRadiusSum && player.vehicle) {
             // Ram! inflict damage on player vehicle, slow it down
+            var ramDamage = c.heavy ? 24 : 12;
             if (VC.combat) {
-              VC.combat.applyDamage(player, 12, v.x, v.y);
+              VC.combat.applyDamage(player, ramDamage, v.x, v.y);
             } else {
               player.damage(12);
             }
+            if (player.vehicle) player.vehicle.damage(c.heavy ? 34 : 16);
             if (VC.wanted) VC.wanted.addCrime('rammed_police', player);
             // Bounce police car back
             var bang = Math.atan2(v.y - player.y, v.x - player.x);
@@ -226,11 +312,23 @@
         if (fd > DESPAWN_DIST) { footOfficers.splice(i, 1); continue; }
 
         // Police see player
-        if (fd < SIGHT_RANGE && VC.wanted) VC.wanted.registerPoliceSpot();
+        var foConcealed = VC.wanted ? VC.wanted.isPlayerConcealed(player, VC.city) : false;
+        if (fd < SIGHT_RANGE && !foConcealed && VC.wanted) VC.wanted.registerPoliceSpot();
 
-        // Move toward player
-        if (fd > 50) {
+        // Move toward player, seek cover while visible, and return to a cruiser when concealed
+        if (foConcealed && cruisers.length) {
+          var returnTo = cruisers[0].vehicle;
+          var ang = Math.atan2(returnTo.y - fo.y, returnTo.x - fo.x);
+          var spd = 125;
+          fo.vx += (Math.cos(ang) * spd - fo.vx) * Math.min(1, dt * 4);
+          fo.vy += (Math.sin(ang) * spd - fo.vy) * Math.min(1, dt * 4);
+        } else if (fd > 50) {
           var ang = Math.atan2(player.y - fo.y, player.x - fo.x);
+          if (!foConcealed && fd < 210) {
+            var sideAngle = ang + (fo.sideCover || 1) * Math.PI * 0.5;
+            ang = sideAngle;
+            fo.sideCover = fo.sideCover || (Math.random() > 0.5 ? 1 : -1);
+          }
           var spd = 110;
           fo.vx += (Math.cos(ang) * spd - fo.vx) * Math.min(1, dt * 4);
           fo.vy += (Math.sin(ang) * spd - fo.vy) * Math.min(1, dt * 4);
@@ -240,6 +338,7 @@
         }
         fo.x += fo.vx * dt;
         fo.y += fo.vy * dt;
+        fo.aimAngle = Math.atan2(player.y - fo.y, player.x - fo.x);
 
         // Shoot
         if (fd < FOOT_SHOOT_RANGE) {
@@ -287,6 +386,42 @@
       }
     },
 
+    renderRoadblocks: function(ctx, timeSec) {
+      for (var i = 0; i < roadblocks.length; i++) {
+        var b = roadblocks[i];
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.heading);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(-70, 10, 140, 18);
+        ctx.fillStyle = '#d8dde3';
+        ctx.fillRect(-68, -8, 136, 16);
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(-68, -8, 136, 5);
+        ctx.fillRect(-68, 3, 136, 5);
+        ctx.fillStyle = '#ff1744';
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('VPD  //  ROAD CLOSED', 0, -10);
+        for (var c = -54; c <= 54; c += 27) {
+          ctx.fillStyle = '#ff7a18';
+          ctx.beginPath();
+          ctx.moveTo(c - 7, 18); ctx.lineTo(c, 5); ctx.lineTo(c + 7, 18); ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(c - 5, 16, 10, 3);
+        }
+        var on = Math.sin(b.flash) > 0;
+        ctx.fillStyle = on ? '#ff1744' : '#5b1018';
+        ctx.shadowColor = on ? '#ff1744' : '#000';
+        ctx.shadowBlur = on ? 18 : 0;
+        ctx.beginPath(); ctx.arc(-58, -14, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = on ? '#1b5cff' : '#101b33';
+        ctx.beginPath(); ctx.arc(58, -14, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+    },
+
     // Render foot officers in world-space (Y-sorted caller should call this)
     renderFootOfficers: function(ctx) {
       for (var i = 0; i < footOfficers.length; i++) {
@@ -314,6 +449,15 @@
         // Cap
         ctx.fillStyle = '#121e30';
         ctx.fillRect(-7, -18, 14, 6);
+        // Heavy-unit rifle, aimed toward the player's current position
+        var aim = fo.shootTimer < 0.25 ? '#ffb300' : '#697b8f';
+        ctx.save();
+        ctx.rotate(fo.aimAngle || 0);
+        ctx.fillStyle = '#11151c';
+        ctx.fillRect(4, -2, 22, 4);
+        ctx.fillStyle = aim;
+        ctx.fillRect(20, -1, 8, 2);
+        ctx.restore();
         ctx.restore();
       }
     },

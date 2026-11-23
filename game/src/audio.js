@@ -50,6 +50,38 @@
   var Audio = {
     enabled: true,
 
+    explosion: function() {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        var now = ctx.currentTime;
+        var noiseBuf = createNoiseBuffer(0.9);
+        if (noiseBuf) {
+          var source = ctx.createBufferSource();
+          source.buffer = noiseBuf;
+          var filter = ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(900, now);
+          filter.frequency.exponentialRampToValueAtTime(55, now + 0.75);
+          var gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.48, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+          source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+          source.start(now); source.stop(now + 0.9);
+        }
+        var osc = ctx.createOscillator();
+        var og = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(95, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.8);
+        og.gain.setValueAtTime(0.55, now);
+        og.gain.exponentialRampToValueAtTime(0.001, now + 0.82);
+        osc.connect(og); og.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.82);
+      } catch (e) {}
+    },
+
     init: function() {
       getAudioContext();
     },

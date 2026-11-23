@@ -22,6 +22,10 @@
 
   // ── Public API ─────────────────────────────────────────────────────────────
   var Combat = {
+    triggerPoliceSpot: function() {
+      hitFlashAlpha = Math.min(1, hitFlashAlpha + 0.22);
+      vignetteAlpha = Math.max(vignetteAlpha, 0.7);
+    },
     // Apply damage to player from world-space origin (ox, oy).
     // Returns true if the player died this call.
     applyDamage: function(player, amount, originX, originY) {
@@ -143,6 +147,16 @@
       if (hitFlashAlpha > 0) {
         ctx.fillStyle = 'rgba(220,20,20,' + (hitFlashAlpha * 0.35) + ')';
         ctx.fillRect(0, 0, 1280, 800);
+      }
+
+      // Police detection edge warning
+      if (VC.wanted && VC.wanted.spotFeedback > 0) {
+        var edge = VC.wanted.spotFeedback / 0.9;
+        ctx.save();
+        ctx.lineWidth = 18 * edge;
+        ctx.strokeStyle = 'rgba(255,28,45,' + (0.85 * edge) + ')';
+        ctx.strokeRect(8, 8, 1264, 784);
+        ctx.restore();
       }
 
       // ── Damage vignette ──

@@ -19,6 +19,8 @@
   var DECAY_INTERVAL       = 12.0;   // seconds to drop one star once hidden
   var DECAY_BLINK_WINDOW   = 4.0;    // seconds of "WANTED" blinking just before each star drop
   var COOLDOWN_AFTER_CRIME = 3.0;    // prevent double-counting the same crime
+  var spotFeedbackTimer = 0;
+  var spotBannerCooldown = 0;
 
   // ── State ──────────────────────────────────────────────────────────────────
   var level         = 0;    // 0-5 stars
@@ -29,6 +31,27 @@
 
   var Wanted = {
     get level() { return level; },
+    get spotFeedback() { return spotFeedbackTimer; },
+
+    isPlayerConcealed: function(player, city) {
+      if (!player) return false;
+      var p = player.vehicle ? player.vehicle : player;
+      if (city && city.tunnels) {
+        for (var t = 0; t < city.tunnels.length; t++) {
+          var tun = city.tunnels[t];
+          if (p.x >= tun.x && p.x <= tun.x + tun.w && p.y >= tun.y && p.y <= tun.y + tun.h) return true;
+        }
+      }
+      if (city && city.buildings) {
+        for (var b = 0; b < city.buildings.length; b++) {
+          var bd = city.buildings[b];
+          var sh = bd.shadowHeight || 30;
+          if (p.x >= bd.x - 12 && p.x <= bd.x + bd.w + sh * 0.6 + 12 &&
+              p.y >= bd.y - 12 && p.y <= bd.y + bd.h + sh + 12) return true;
+        }
+      }
+      return false;
+    },
 
     addCrime: function(crimeKey, player) {
       if (!CRIME_STARS[crimeKey]) return;
@@ -37,7 +60,7 @@
       crimeCooldowns[crimeKey] = COOLDOWN_AFTER_CRIME;
 
       var add = CRIME_STARS[crimeKey];
-      level = Math.min(5, level + add);
+      level = Math.min(6, level + add);
 
       // Write back to player object if provided
       if (player) player.wantedLevel = level;
@@ -61,6 +84,13 @@
       sightTimer = 0;
       isLosing = false;
       decayTimer = DECAY_INTERVAL;
+      spotFeedbackTimer = 0.9;
+      if (VC.combat && VC.combat.triggerPoliceSpot) VC.combat.triggerPoliceSpot();
+      if (spotBannerCooldown <= 0 && VC.hud) {
+        VC.hud.toast('警察看到了你 // 藏匿衰减已重置', 1.6);
+        spotBannerCooldown = 2.5;
+      }
+      if (VC.Audio) VC.Audio.startSiren();
     },
 
     // Drop the level by delta stars (clamped to 0)
@@ -72,7 +102,7 @@
     },
 
     setLevel: function(val, player) {
-      level = Math.max(0, Math.min(5, val));
+      level = Math.max(0, Math.min(6, val));
       if (player) player.wantedLevel = level;
       else if (VC.player) VC.player.wantedLevel = level;
       if (VC.police) VC.police.onWantedLevelChange(level);
@@ -97,6 +127,8 @@
       for (var k = 0; k < keys.length; k++) {
         crimeCooldowns[keys[k]] -= dt;
       }
+      if (spotFeedbackTimer > 0) spotFeedbackTimer = Math.max(0, spotFeedbackTimer - dt);
+      if (spotBannerCooldown > 0) spotBannerCooldown = Math.max(0, spotBannerCooldown - dt);
 
       if (level <= 0) {
         isLosing = false;
