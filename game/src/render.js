@@ -25,6 +25,7 @@
 
       // 3. Wet Asphalt Neon & Light Reflections (Smeared vertical streaks on slick pavement)
       this.renderWetAsphaltReflections(ctx, city, view, timeSec);
+      if (VC.weather) VC.weather.renderGroundReflections(ctx, city, view, timeSec);
 
       // 4. Ground Shadows (Buildings, Cars, Trees)
       this.renderGroundShadows(ctx, city, view);
@@ -52,6 +53,7 @@
 
       // 8. Screen-Space Atmosphere: Rain mist, Teal Haze, Vignette
       this.renderScreenAtmosphere(ctx, timeSec);
+      if (VC.weather) VC.weather.renderRainAndLightning(ctx);
     },
 
     renderOceanAndWaterfront: function(ctx, city, view, timeSec) {

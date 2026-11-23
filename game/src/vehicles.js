@@ -301,6 +301,7 @@
     var latVel = currentVx * rightX + currentVy * rightY;
 
     var gripMultiplier = handbrake ? (this.grip * (1 - this.driftFactor)) : this.grip;
+    if (VC.weather) gripMultiplier *= VC.weather.getGripMultiplier();
     latVel *= Math.exp(-dt * gripMultiplier);
 
     this.lateralVelocity = latVel;

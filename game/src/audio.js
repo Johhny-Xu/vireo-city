@@ -165,6 +165,31 @@
       } catch (e) {}
     },
 
+    thunder: function() {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        var now = ctx.currentTime;
+        var noiseBuf = createNoiseBuffer(1.8);
+        if (!noiseBuf) return;
+        var source = ctx.createBufferSource();
+        source.buffer = noiseBuf;
+        var filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(180, now);
+        filter.frequency.exponentialRampToValueAtTime(45, now + 1.5);
+        var gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        source.start(now);
+        source.stop(now + 1.8);
+      } catch (e) {}
+    },
+
     startSiren: function() {
       if (!this.enabled || sirenOsc) return;
       var ctx = getAudioContext();

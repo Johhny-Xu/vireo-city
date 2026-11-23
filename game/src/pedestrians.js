@@ -69,6 +69,12 @@
 
     // 2. State-specific behavior
     var curSpeed = this.walkSpeed;
+    if (VC.weather && VC.weather.isRaining()) {
+      curSpeed *= 1.2;
+      this.hasUmbrella = true;
+    } else {
+      this.hasUmbrella = false;
+    }
 
     if (this.state === 'cowering') {
       curSpeed = 0;
@@ -262,6 +268,24 @@
 
     // Rotate with heading
     ctx.rotate(this.heading);
+
+    if (this.hasUmbrella) {
+      ctx.save();
+      ctx.fillStyle = '#101827';
+      ctx.beginPath();
+      ctx.arc(0, -13, 10, Math.PI, 0);
+      ctx.lineTo(8, -13);
+      ctx.lineTo(-8, -13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#8bdcff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, -13);
+      ctx.lineTo(0, 7);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     // 2. Animated Legs
     var walkSin = Math.sin(this.walkPhase);

@@ -27,13 +27,21 @@ node serve.ts
 ## Play
 
 - Move: `W`, `A`, `S`, `D`
+- Sprint: `Shift`
 - Aim: mouse
 - Attack / interact: left mouse button
 - Enter or exit vehicles: `F`
 - Reload: `R`
+- Cycle weapons: `Q`
+- Handbrake / pause mission dialog: `Space`
 - Open the satellite map: `M` or `Tab`
-- Pause or return: `Escape`
-- Save: available from the in-game menu
+- Pause / resume: `Escape`
+- Save: `F5`
+- Load: `F9`
+- Start / advance mission shortcut: `G`
+- Close mission dialog: `Space`
+- Toggle synth radio: `Comma` (`,`)
+- Save/load or return: in-game menu
 
 ## Features
 
@@ -49,6 +57,10 @@ node serve.ts
 - Cash, health, armor, weapon, wanted, vehicle, and mission HUD
 - Local saves
 - Synthesized radio, engine, siren, combat, menu, and UI audio
+- Dynamic rain-night weather: clear, light rain, heavy rain, and thunderstorm states
+- Wet-road accumulation with neon/vehicle/police reflections and reduced tire grip
+- Rain particles, puddle splashes, distant lightning, thunder audio, fog, and reduced visibility
+- Pedestrians open umbrellas and move faster in wet weather
 
 ## Screenshots
 

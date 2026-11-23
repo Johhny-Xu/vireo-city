@@ -62,6 +62,7 @@
       VC.player = new VC.Player(1100, 1100);
       VC.camera.snapTo(1100, 1100);
       gameTime = 1.8;
+      if (VC.weather) VC.weather.forceState('LIGHT_RAIN');
 
     // ── street ─────────────────────────────────────────────────────────────
     } else if (shot === 'street' || shot === 'play') {
@@ -77,6 +78,7 @@
       VC.camera.snapTo(spawnX, spawnY);
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
+      if (VC.weather) VC.weather.forceState('HEAVY_RAIN');
 
     // ── drive ──────────────────────────────────────────────────────────────
     } else if (shot === 'drive') {
@@ -144,6 +146,7 @@
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
+      if (VC.weather) VC.weather.forceState('STORM');
 
     // ── mission (new) ──────────────────────────────────────────────────────
     } else if (shot === 'mission') {
@@ -162,6 +165,7 @@
           VC.Missions.state.dialog.timer = 6.5; // reset to full
         }
       }
+      if (VC.weather) VC.weather.forceState('LIGHT_RAIN');
     }
 
     // Force one deterministic update step and camera settle
@@ -203,6 +207,7 @@
   // ── Update ────────────────────────────────────────────────────────────────
   function update(dt) {
     gameTime += dt;
+    if (VC.weather) VC.weather.update(dt, VC.city, VC.player, gameTime);
 
     // ── Global binds ──────────────────────────────────────────────────────
     if (VC.Input.justPressed('Escape')) {
@@ -337,6 +342,7 @@
     VC.camera.init(1280, 800);
     if (VC.Input)  VC.Input.init(canvas);
     if (VC.Audio)  VC.Audio.init();
+    if (VC.weather) VC.weather.init(seed ? parseInt(seed, 10) || 1986 : 1986);
     if (VC.Menu)   VC.Menu.init();
 
     // Seed check for "Continue" (save.js may already set hasSave)

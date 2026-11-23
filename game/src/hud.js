@@ -472,7 +472,7 @@
 
     // ── Radio banner (above minimap, with a 17px vertical gap) ───────────────
     renderRadioBanner: function(ctx, timeSec) {
-      var rx = 1252, ry = 550, rw = 240, rh = 42, x = rx - rw;
+      var rx = 1252, ry = 550, rw = 274, rh = 42, x = rx - rw;
       var station = RADIO_STATIONS[radioIndex];
       ctx.save();
       ctx.fillStyle = 'rgba(6,10,18,0.78)';
@@ -485,20 +485,20 @@
       ctx.fillStyle = '#ff88cc';
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
       ctx.fillText('\u266b ' + station.station, x + 10, ry + 6);
+      if (VC.weather) {
+        ctx.font = 'bold 8px monospace';
+        ctx.fillStyle = VC.weather.state === 'STORM' ? '#bda7ff' : '#88dfff';
+        ctx.textAlign = 'right';
+        ctx.fillText(VC.weather.state.replace('_', ' ') + '  ' +
+          Math.round(VC.weather.rainIntensity * 100) + '%', x + rw - 8, ry + 7);
+      }
 
       // Scroll the track name
       var trackText = station.track;
-      var elapsed = RADIO_INTERVAL - radioTimer;
-      var scrollPos = Math.max(0, (elapsed - 2) * 28) % (trackText.length * 7 + 100);
       ctx.font = '9px monospace';
       ctx.fillStyle = '#cc88aa';
       ctx.textBaseline = 'top';
-
-      ctx.save();
-      ctx.rect(x + 8, ry + 22, rw - 16, 14);
-      ctx.clip();
-      ctx.fillText(trackText, x + 10 - scrollPos, ry + 24);
-      ctx.restore();
+      ctx.fillText(trackText, x + 10, ry + 24, rw - 20);
 
       ctx.restore();
     },
