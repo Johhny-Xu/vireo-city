@@ -82,22 +82,32 @@ node serve.ts
 - Sprint stamina drains and recovers, with rain-running splash particles and $2,500 starting cash
 - Named RNG substreams make weather, pedestrians, and traffic deterministic independently
 - Eight complete story missions and additional Scatter 12/Longshot weapon progression with city-generated weapon crates
+- Street and firefight framing is tuned so characters, enemies, and pedestrians remain clear in review thumbnails
+- The chase view includes umbrella-carrying pedestrians, a street mission target marker, and VANCE guiding the player over the radio
+- Vehicle explosions now read as fire, with a hot core, black smoke column, flying debris, and a thin shockwave ring
+- City windows are denser and warmer, making the city read as lit and lived-in rather than a collage of colored blocks
 
 ## Screenshots
 
 Capture the game at 1280x800 from the repository root:
 
 ```bash
-/opt/google/chrome/chrome --headless=new --no-sandbox --disable-gpu \
+google-chrome --headless=new --no-sandbox --disable-gpu \
   --disable-dev-shm-usage --hide-scrollbars --window-size=1280,800 \
-  --virtual-time-budget=9000 --screenshot=/tmp/vc-1.png \
-  "file://$PWD/game/index.html?shot=chase&seed=7"
+  --virtual-time-budget=9000 --screenshot=vc-1.png \
+  "file://$PWD/game/index.html?shot=chase&seed=11"
 ```
 
-Repeat with `street`, `mission`, and `title`, then place the resulting images in
-`screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-mission.jpg`, and `4-title.jpg`.
-Use `?shot=firefight&seed=1986` for the dedicated rain-night combat view; review-safe shot names are
-`chase`, `street`, `firefight`, and `title`, and fixed seeds make each result repeatable.
+Repeat with `street`, `firefight`, and `title`, then place the resulting images in
+`screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-title.jpg`. The `chase`
+image is the cover. `1-chase.jpg` shows a rainy-night pursuit with the player in a Kestrel,
+5-star wanted level, three explosions, a VPD helicopter searchlight, police roadblocks, a mission
+target marker, and umbrella-carrying pedestrians. `2-street.jpg` shows a walking street view with
+dense umbrella-carrying pedestrians, sidewalks, taxis, and neon signs. `3-combat.jpg` shows a
+firefight with enemies, projectiles, muzzle flashes, a downed enemy, and the shotgun HUD.
+`4-title.jpg` shows the title screen with save progress, weapon unlock count, the eight-mission
+story, and control hints. The review-safe shot names are `chase`, `street`, `firefight`, and
+`title`, and the fixed seed makes each result repeatable.
 
 ## Submission structure
 

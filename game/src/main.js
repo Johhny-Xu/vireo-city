@@ -211,7 +211,7 @@
 
       // Seed two police cruisers behind the player
       if (VC.police) {
-        VC.police.seedState(4, VC.player);
+        VC.police.seedState(6, VC.player);
         // Manually position the cruisers on the same road behind
         var cr = VC.police.cruisers;
         if (cr.length >= 1) {
@@ -235,6 +235,26 @@
           cr[3].vehicle.heading = 0.22; cr[3].vehicle.speed = 195;
           cr[3].sirenPhase = Math.PI * 1.5;
           cr[3].disabled = false;
+        }
+        // Two additional fixed interceptors close in from the left rear,
+        // kept clear of the player, the explosions, and all HUD regions.
+        if (cr.length >= 5) {
+          cr[4].vehicle.x = chaseX - 155; cr[4].vehicle.y = chaseY + 115;
+          cr[4].vehicle.heading = -0.30; cr[4].vehicle.speed = 215;
+          cr[4].vehicle.typeKey = 'interceptor';
+          cr[4].vehicle.isPolice = true;
+          cr[4].vehicle.sirenOn = true;
+          cr[4].vehicle.lightsOn = true;
+          cr[4].sirenPhase = Math.PI * 0.25;
+        }
+        if (cr.length >= 6) {
+          cr[5].vehicle.x = chaseX - 310; cr[5].vehicle.y = chaseY - 85;
+          cr[5].vehicle.heading = 0.32; cr[5].vehicle.speed = 205;
+          cr[5].vehicle.typeKey = 'interceptor';
+          cr[5].vehicle.isPolice = true;
+          cr[5].vehicle.sirenOn = true;
+          cr[5].vehicle.lightsOn = true;
+          cr[5].sirenPhase = Math.PI * 1.25;
         }
         if (cr.length >= 3) {
           cr[2].vehicle.health = 18;
@@ -382,6 +402,43 @@
         ctx.arc(outlineX, outlineY, pursuitRadius * VC.camera.zoom, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // Shot-only chase mission beacon: bright forward-side objective marker,
+      // drawn in world-to-screen space so it remains level with the player.
+      if (shotType === 'chase') {
+        var markerWorldX = 1580;
+        var markerWorldY = 610;
+        var markerX = 640 + (markerWorldX - VC.camera.x) * VC.camera.zoom;
+        var markerY = 400 + (markerWorldY - VC.camera.y) * VC.camera.zoom;
+        var markerPulse = 1 + 0.12 * Math.sin(gameTime * 3.5);
+        ctx.save();
+        ctx.translate(markerX, markerY);
+        ctx.strokeStyle = 'rgba(255,196,40,0.72)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#ffd24a';
+        ctx.shadowBlur = 18;
+        ctx.beginPath();
+        ctx.arc(0, 0, 17 * markerPulse, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = '#ffe66a';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(0, 0, 13, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,210,74,0.92)';
+        ctx.beginPath();
+        ctx.moveTo(0, -7);
+        ctx.lineTo(-5, 2);
+        ctx.lineTo(-1.5, 2);
+        ctx.lineTo(-1.5, 8);
+        ctx.lineTo(1.5, 8);
+        ctx.lineTo(1.5, 2);
+        ctx.lineTo(5, 2);
+        ctx.closePath();
+        ctx.fill();
         ctx.restore();
       }
 

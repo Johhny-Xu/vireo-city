@@ -598,7 +598,7 @@
 
     // ── Radio and weather banners (separate rows above minimap) ─────────────
     renderRadioBanner: function(ctx, timeSec) {
-      var rx = 1252, ry = 516, rw = 274, rh = 38, x = rx - rw;
+      var rx = 1252, ry = 516, rw = 274, rh = 42, x = rx - rw;
       var station = RADIO_STATIONS[radioIndex];
       var trackText = station.track;
       if (VC.Missions) {
@@ -630,6 +630,12 @@
       ctx.fillStyle = '#cc88aa';
       ctx.textBaseline = 'top';
       ctx.fillText(trackText, x + 10, ry + 24);
+
+      // Chase-cover character line: keep it inside the fixed right-edge panel.
+      ctx.font = 'bold 8px "Courier New", monospace';
+      ctx.fillStyle = '#ffb347';
+      ctx.textBaseline = 'top';
+      ctx.fillText("VANCE: Docks are hot - lose them at the water", x + 10, ry + 35);
       ctx.restore();
 
       // Separate weather status row
