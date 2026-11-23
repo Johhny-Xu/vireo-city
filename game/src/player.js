@@ -121,8 +121,10 @@
 
       // Dynamic camera zoom and lead while driving
       if (VC.camera) {
-        VC.camera.zoom = 1.0 - speedRatio * 0.22;
-        VC.camera.leadDist = 130 + speedRatio * 85;
+        // A slightly tighter magnification keeps the vehicle large and reinforces speed,
+        // while the on-foot branch below restores the normal 1.0 view and 70px lead.
+        VC.camera.zoom = 1.0 + speedRatio * 0.18;
+        VC.camera.leadDist = 110 + speedRatio * 60;
       }
 
       // Exit Vehicle on KeyF

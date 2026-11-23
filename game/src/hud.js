@@ -12,6 +12,18 @@
   var cashTarget   = 0;    // actual value
   var cashFlash    = 0;    // seconds of green flash
 
+  function formatCash(amount) {
+    var rounded = Math.round((Number(amount) || 0) * 100) / 100;
+    if (Object.is(rounded, -0) || rounded === 0) return '$0';
+
+    var sign = rounded < 0 ? '-' : '';
+    var absolute = Math.abs(rounded);
+    var parts = absolute.toFixed(2).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var fraction = parts[1].replace(/0+$/, '');
+    return sign + '$' + parts[0] + (fraction ? '.' + fraction : '');
+  }
+
   // ── GAME SAVED toast ──────────────────────────────────────────────────────
   var savedToast   = 0;    // countdown timer
 
@@ -143,7 +155,7 @@
         else this.renderMapOverlay(ctx, player, city);
       }
 
-      // 9. Radio banner (bottom-right corner above minimap)
+      // 9. Radio banner (upper-right, clear of the bottom minimap)
       this.renderRadioBanner(ctx, timeSec);
 
       // 10. GAME SAVED toast (center-bottom)
@@ -219,9 +231,7 @@
       VC.roundRect(ctx, boxX, y, boxW, boxH, 5);
       ctx.fill(); ctx.stroke();
 
-      var cashNum = Math.floor(cashDisplay);
-      var cashStr = '$' + ('00000000' + cashNum).slice(-8);
-      cashStr = cashStr.slice(0, 3) + ',' + cashStr.slice(3, 6) + ',' + cashStr.slice(6);
+      var cashStr = formatCash(cashDisplay);
       VC.drawGlowText(ctx, cashStr, boxX + boxW / 2, y + 22, 'bold 20px "Courier New", monospace',
         cashFlash > 0 ? '#88ffaa' : '#39ff14', 'rgba(57,255,20,0.5)', 8, 'center');
 
@@ -460,9 +470,9 @@
       }
     },
 
-    // ── Radio banner (bottom-right, above minimap) ────────────────────────────
+    // ── Radio banner (above minimap, with a 17px vertical gap) ───────────────
     renderRadioBanner: function(ctx, timeSec) {
-      var rx = 1252, ry = 648, rw = 240, rh = 42, x = rx - rw;
+      var rx = 1252, ry = 550, rw = 240, rh = 42, x = rx - rw;
       var station = RADIO_STATIONS[radioIndex];
       ctx.save();
       ctx.fillStyle = 'rgba(6,10,18,0.78)';

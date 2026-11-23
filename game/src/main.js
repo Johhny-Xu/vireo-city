@@ -92,7 +92,7 @@
       VC.player.vehicle = muscleCar;
       muscleCar.driver = VC.player;
       VC.camera.snapTo(driveX + 90, driveY);
-      VC.camera.zoom = 0.85; VC.camera.leadDist = 150;
+      VC.camera.zoom = 1.12; VC.camera.leadDist = 150;
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 4.8;
       if (VC.hud) VC.hud.toast('SPEED LIMIT EXCEEDED // PATROL ALERT', 3.0);
@@ -140,7 +140,7 @@
       }
 
       VC.camera.snapTo(chaseX + 80, chaseY);
-      VC.camera.zoom = 0.80; VC.camera.leadDist = 160;
+      VC.camera.zoom = 1.15; VC.camera.leadDist = 160;
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
