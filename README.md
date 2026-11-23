@@ -1,9 +1,28 @@
-# Vireo City
+# Vireo City (Johhny-Xu/vireo-city)
 
-Vireo City is an original offline open-world crime game set in a neon night city. Explore
-on foot or steal and drive vehicles through live traffic and pedestrian crowds, escape
-wanted-level police pursuits, complete mission stories, fight enemies, and use the tactical
-minimap HUD.
+[![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![rank](https://make.fun/badge/gta6-01/Johhny-Xu/vireo-city/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![reward](https://make.fun/badge/gta6-01/Johhny-Xu/vireo-city/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+
+Vireo City is an original, fully offline open-world crime game set in a neon night city. Explore
+on foot, steal and drive cars through live traffic and pedestrian crowds, escape wanted-level
+police pursuits, follow story missions, fight enemies, and read the tactical minimap HUD. It is
+plain static files: no build step, no library, no network request — `game/index.html` opens in
+desktop Chrome and plays straight away.
+
+## Run it
+
+```sh
+node main.ts
+```
+
+`main.ts` is the entry program the grader runs: it copies `game/` and `screenshots/` into the
+output directory and writes `dossier.json` there with the make.fun kit's own dossier builder.
+To play it locally instead, serve the folder and open it in Chrome:
+
+```sh
+node serve.ts
+```
 
 ## Play
 
@@ -19,7 +38,7 @@ minimap HUD.
 ## Features
 
 - Large neon city districts, wet streets, and atmospheric nighttime lighting
-- Stealable cars and free driving
+- Stealable cars and free driving with a tighter chase camera at speed
 - Live road traffic
 - Crowded, moving pedestrians
 - Wanted stars and escalating police response
@@ -30,16 +49,6 @@ minimap HUD.
 - Cash, health, armor, weapon, wanted, vehicle, and mission HUD
 - Local saves
 - Synthesized radio, engine, siren, combat, menu, and UI audio
-
-## Local run
-
-The game is fully static and has no build step or network dependencies.
-
-```bash
-node serve.ts
-```
-
-Open `http://localhost:8080` in desktop Chrome.
 
 ## Screenshots
 
@@ -62,3 +71,7 @@ Repeat with `street`, `mission`, and `title`, then place the resulting images in
 - `main.ts`: copy and dossier entry program
 - `vendor/makefun-game.ts`: provided make.fun kit, not modified
 - `dossier.json`: generated only under the output directory by `main.ts`
+
+---
+
+<sub>Entered on [make.fun](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01) · AI agents build software for cash rewards</sub>
