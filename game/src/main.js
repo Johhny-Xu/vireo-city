@@ -140,14 +140,29 @@
       if (VC.traffic) VC.traffic.vehicles.push({ vehicle: nearCab });
 
       VC.camera.snapTo(spawnX, spawnY);
-      VC.camera.zoom = 1.55;
-      shotCamera = { zoom: 1.55, leadDist: 70 };
+      VC.camera.zoom = 2.05;
+      shotCamera = { zoom: 2.05, leadDist: 70 };
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
       if (VC.pedestrians) {
         VC.pedestrians.MAX_PEDESTRIANS = 24;
         VC.pedestrians.initDeterministic(VC.city, VC.player);
         if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(22, VC.player);
+        // Keep a readable cluster of umbrella pedestrians in the road-facing frame.
+        var streetPedPositions = [
+          [690,680], [800,680], [690,735], [815,735],
+          [670,705], [815,705], [830,690], [650,735]
+        ];
+        for (var spi = 0; spi < streetPedPositions.length && spi < VC.pedestrians.pedestrians.length; spi++) {
+          var streetPed = VC.pedestrians.pedestrians[spi];
+          streetPed.x = streetPedPositions[spi][0];
+          streetPed.y = streetPedPositions[spi][1];
+          streetPed.walkAxis = spi % 2 ? 'v' : 'h';
+          streetPed.walkDir = spi % 3 === 0 ? -1 : 1;
+          streetPed.heading = streetPed.walkDir === 1 ? 0 : Math.PI;
+          streetPed.state = 'walking';
+          streetPed.stateTimer = 0;
+        }
         // Add deterministic umbrella/flee offsets to the existing crowd.
         for (var pi = 0; pi < VC.pedestrians.pedestrians.length; pi++) {
           var existingPed = VC.pedestrians.pedestrians[pi];
@@ -158,6 +173,24 @@
             existingPed.heading = pi % 2 ? Math.PI : 0;
           }
         }
+      }
+      if (VC.police) {
+        var streetPoliceCruiser = new VC.Vehicle('interceptor', 650, 705, 0);
+        streetPoliceCruiser.speed = 0;
+        streetPoliceCruiser.vx = 0;
+        streetPoliceCruiser.vy = 0;
+        streetPoliceCruiser.lightsOn = true;
+        streetPoliceCruiser.sirenOn = true;
+        streetPoliceCruiser.isPolice = true;
+        VC.police.cruisers.length = 0;
+        VC.police.cruisers.push({
+          vehicle: streetPoliceCruiser,
+          shootTimer: 1.4,
+          sirenPhase: 0,
+          state: 'chase',
+          disabled: false,
+          heavy: false
+        });
       }
       if (VC.weather) VC.weather.forceState('HEAVY_RAIN');
 
@@ -385,6 +418,16 @@
       VC.Menu.render(ctx, gameTime);
 
     } else if (VC.gameState === 'playing') {
+      // Keep the shot-only street interceptor flashing even with wanted level 0.
+      if (shotType === 'street' && VC.police && VC.police.cruisers) {
+        for (var sci = 0; sci < VC.police.cruisers.length; sci++) {
+          var streetCruiser = VC.police.cruisers[sci];
+          if (streetCruiser && streetCruiser.vehicle) {
+            streetCruiser.vehicle.sirenTimer = gameTime * 8;
+            streetCruiser.sirenPhase = (gameTime * 2.4 * Math.PI * 2) % (Math.PI * 2);
+          }
+        }
+      }
       VC.Renderer.render(ctx, VC.city, VC.player, VC.camera, gameTime);
 
       // Shot-only street halo: keep the on-foot protagonist readable over dark rain-slick roads.
@@ -398,7 +441,7 @@
         ctx.shadowColor = '#7deaff';
         ctx.shadowBlur = 14;
         ctx.beginPath();
-        var pursuitRadius = shotType === 'chase' ? 38 : 22;
+        var pursuitRadius = shotType === 'chase' ? 38 : 12;
         ctx.arc(outlineX, outlineY, pursuitRadius * VC.camera.zoom, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
