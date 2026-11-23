@@ -166,6 +166,25 @@
         ctx.stroke();
       }
 
+      // Soft retro sunset behind the title logo.
+      ctx.save();
+      ctx.globalAlpha = 0.62;
+      var sunset = ctx.createRadialGradient(640, 235, 25, 640, 235, 170);
+      sunset.addColorStop(0, '#ffe9b0');
+      sunset.addColorStop(0.42, '#ff9a3c');
+      sunset.addColorStop(0.78, '#ff5a2b');
+      sunset.addColorStop(1, 'rgba(255, 90, 43, 0)');
+      ctx.fillStyle = sunset;
+      ctx.beginPath();
+      ctx.arc(640, 235, 170, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(50, 34, 62, 0.34)';
+      ctx.fillRect(470, 205, 340, 10);
+      ctx.fillRect(458, 238, 364, 16);
+      ctx.fillRect(475, 278, 330, 12);
+      ctx.restore();
+
       // Title Logo: "VIREO CITY"
       var titleY = 220;
       // Magenta shadow drop pass

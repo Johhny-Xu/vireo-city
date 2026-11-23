@@ -528,30 +528,13 @@
     },
 
     renderVireoSign: function(ctx, city, view) {
-      if (!city || !city.buildings) return;
+      if (!VC.coverSign) return;
+      if (!city) return;
 
-      var targetX = 1150;
-      var targetY = 540;
-      var target = null;
-      var nearest = Infinity;
-      for (var i = 0; i < city.buildings.length; i++) {
-        var building = city.buildings[i];
-        var centerX = building.x + building.w / 2;
-        var centerY = building.y + building.h / 2;
-        var dx = centerX - targetX;
-        var dy = centerY - targetY;
-        var distance = dx * dx + dy * dy;
-        if (distance < nearest) {
-          nearest = distance;
-          target = building;
-        }
-      }
-      if (!target) return;
-
-      var signW = 220;
-      var signH = 90;
-      var signX = target.x + target.w / 2;
-      var signY = target.y - signH / 2;
+      var signW = 170;
+      var signH = 100;
+      var signX = 975;
+      var signY = 780;
       if (signX + signW / 2 < view.left || signX - signW / 2 > view.right ||
           signY + signH / 2 < view.top || signY - signH / 2 > view.bottom) return;
 

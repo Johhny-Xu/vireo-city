@@ -49,6 +49,7 @@
     isShotMode = true;
     shotType = shot;
     var shotCamera = null;
+    VC.coverSign = false;
 
     var actualSeed = seed ? parseInt(seed, 10) : 1986;
     if (isNaN(actualSeed)) actualSeed = 1986;
@@ -151,7 +152,7 @@
         // Keep a readable cluster of umbrella pedestrians in the road-facing frame.
         var streetPedPositions = [
           [690,680], [800,680], [690,735], [815,735],
-          [670,705], [815,705], [830,690], [650,735]
+          [710,640], [815,705], [830,690], [800,740]
         ];
         for (var spi = 0; spi < streetPedPositions.length && spi < VC.pedestrians.pedestrians.length; spi++) {
           var streetPed = VC.pedestrians.pedestrians[spi];
@@ -227,6 +228,7 @@
 
     // ── chase (new) ────────────────────────────────────────────────────────
     } else if (shot === 'chase') {
+      VC.coverSign = true;
       var chaseX = 1360, chaseY = 723.5;
       var chaseCar = new VC.Vehicle('kestrel', chaseX, chaseY, 0.1);
       chaseCar.speed = 240; chaseCar.vx = 240; chaseCar.lightsOn = true;
