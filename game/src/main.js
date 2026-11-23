@@ -50,6 +50,7 @@
     shotType = shot;
     var shotCamera = null;
     VC.coverSign = false;
+    VC.hiddenSignText = null;
 
     var actualSeed = seed ? parseInt(seed, 10) : 1986;
     if (isNaN(actualSeed)) actualSeed = 1986;
@@ -82,6 +83,19 @@
       if (VC.police) {
         VC.police.seedState(1, VC.player);
         VC.police.seedFootOfficers(3, VC.player);
+        var fightCruiser = new VC.Vehicle('interceptor', 1010, 632, 2.2);
+        fightCruiser.speed = 0;
+        fightCruiser.lightsOn = true;
+        fightCruiser.sirenOn = true;
+        fightCruiser.pursuitLights = true;
+        VC.police.cruisers.push({
+          vehicle: fightCruiser,
+          shootTimer: 1.4,
+          sirenPhase: 0,
+          state: 'chase',
+          disabled: false,
+          heavy: false
+        });
         var fightOfficers = VC.police.footOfficers;
         if (fightOfficers.length) {
           fightOfficers[0].x = fightX + 118; fightOfficers[0].y = fightY - 62;
@@ -183,6 +197,7 @@
         streetPoliceCruiser.lightsOn = true;
         streetPoliceCruiser.sirenOn = true;
         streetPoliceCruiser.isPolice = true;
+        streetPoliceCruiser.pursuitLights = true;
         VC.police.cruisers.length = 0;
         VC.police.cruisers.push({
           vehicle: streetPoliceCruiser,
@@ -199,6 +214,7 @@
         streetPoliceCruiserTwo.lightsOn = true;
         streetPoliceCruiserTwo.sirenOn = true;
         streetPoliceCruiserTwo.isPolice = true;
+        streetPoliceCruiserTwo.pursuitLights = true;
         VC.police.cruisers.push({
           vehicle: streetPoliceCruiserTwo,
           shootTimer: 1.4,
@@ -244,6 +260,7 @@
     // ── chase (new) ────────────────────────────────────────────────────────
     } else if (shot === 'chase') {
       VC.coverSign = true;
+      VC.hiddenSignText = ['SYNTH TAXI'];
       var chaseX = 1360, chaseY = 723.5;
       var chaseCar = new VC.Vehicle('kestrel', chaseX, chaseY, 0.1);
       chaseCar.speed = 240; chaseCar.vx = 240; chaseCar.lightsOn = true;
@@ -307,6 +324,11 @@
           cr[5].vehicle.sirenOn = true;
           cr[5].vehicle.lightsOn = true;
           cr[5].sirenPhase = Math.PI * 1.25;
+        }
+        for (var pci = 0; pci < cr.length; pci++) {
+          if (cr[pci].vehicle.typeKey === 'interceptor') {
+            cr[pci].vehicle.pursuitLights = true;
+          }
         }
         if (cr.length >= 3) {
           cr[2].vehicle.health = 18;

@@ -492,6 +492,16 @@
         // Rooftop Neon Billboard Sign
         if (b.neonSign) {
           var ns = b.neonSign;
+          if (VC.hiddenSignText) {
+            var hiddenSign = false;
+            for (var hi = 0; hi < VC.hiddenSignText.length; hi++) {
+              if (ns.text.indexOf(VC.hiddenSignText[hi]) !== -1) {
+                hiddenSign = true;
+                break;
+              }
+            }
+            if (hiddenSign) continue;
+          }
           ctx.save();
 
           // Sign frame & struts

@@ -134,8 +134,8 @@
       grip: 12.5,
       driftFactor: 0.48,
       mass: 1.4,
-      defaultColor: '#181e26',
-      roofColor: '#f0f4f8',
+      defaultColor: '#e6ecf6',
+      roofColor: '#132540',
       glassColor: '#0c1622'
     },
     ronin: {
@@ -199,6 +199,7 @@
     this.lightsOn = true;
     this.sirenOn = this.typeKey === 'interceptor';
     this.sirenTimer = 0;
+    this.pursuitLights = false;
 
     this.driver = null; // player or null
     this.isDrifting = false;
@@ -439,6 +440,13 @@
     ctx.fill();
     ctx.restore();
 
+    // Pursuit-only ground glow, laid down before the vehicle body
+    if (this.typeKey === 'interceptor' && this.pursuitLights) {
+      var pursuitPhase = Math.floor((this.sirenTimer || 0)) % 2;
+      var pursuitColor = pursuitPhase === 0 ? 'rgba(0,229,255,0.40)' : 'rgba(255,23,68,0.40)';
+      VC.drawRadialLight(ctx, 0, 0, 42, pursuitColor, 'rgba(0,0,0,0)');
+    }
+
     // Clear road illumination: bright headlight cones make the vehicle read as
     // an escaping player car or an active police pursuit at thumbnail scale.
     if (this.lightsOn) {
@@ -671,9 +679,9 @@
       ctx.fillStyle = leftBlue ? '#00e5ff' : '#003366';
       if (leftBlue) {
         ctx.shadowColor = '#00e5ff';
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18;
       }
-      ctx.fillRect(roofX + roofW / 2 - 2.5, -hh * 0.6, 5, hh * 0.55);
+      ctx.fillRect(roofX + roofW / 2 - 3.5, -hh * 0.6, 7, hh * 0.55);
       ctx.restore();
 
       // Right red LED strobe
@@ -681,9 +689,17 @@
       ctx.fillStyle = !leftBlue ? '#ff1744' : '#660011';
       if (!leftBlue) {
         ctx.shadowColor = '#ff1744';
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18;
       }
-      ctx.fillRect(roofX + roofW / 2 - 2.5, hh * 0.05, 5, hh * 0.55);
+      ctx.fillRect(roofX + roofW / 2 - 3.5, hh * 0.05, 7, hh * 0.55);
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 7px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('VPD', roofX + roofW / 2, roofY + roofH / 2);
       ctx.restore();
     }
 

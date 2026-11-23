@@ -235,7 +235,7 @@
       // Subtitle
       VC.drawGlowText(
         ctx,
-        'NOCTURNE OVER VICE COAST',
+        'NOCTURNE OVER VIREO COAST',
         640,
         titleY + 68,
         'bold 18px "Courier New", monospace',
@@ -408,7 +408,7 @@
 
       VC.drawGlowText(
         ctx,
-        'NOCTURNE OVER VICE COAST',
+        'NOCTURNE OVER VIREO COAST',
         640,
         224,
         'bold 16px "Courier New", monospace',

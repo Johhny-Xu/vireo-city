@@ -15,7 +15,7 @@
     { text: 'NEON COVE', color: '#00f0ff', glow: 'rgba(0,240,255,0.7)', sub: 'HOTEL & LOUNGE' },
     { text: 'SYNTH TAXI', color: '#ffaa00', glow: 'rgba(255,170,0,0.7)', sub: '24/7 CAB SERVICE' },
     { text: 'HYPERION', color: '#ff007f', glow: 'rgba(255,0,127,0.7)', sub: 'TOWER SUITES' },
-    { text: 'VICE CASINO', color: '#39ff14', glow: 'rgba(57,255,20,0.7)', sub: 'SLOTS & CARDS' },
+    { text: 'VIREO CASINO', color: '#39ff14', glow: 'rgba(57,255,20,0.7)', sub: 'SLOTS & CARDS' },
     { text: 'OCEANIC CLUB', color: '#00e5ff', glow: 'rgba(0,229,255,0.7)', sub: 'NIGHTCLUB' },
     { text: 'KOBRA DINER', color: '#ff3366', glow: 'rgba(255,51,102,0.7)', sub: 'OPEN ALL NIGHT' },
     { text: 'TURBO MOTORS', color: '#ffbb00', glow: 'rgba(255,187,0,0.7)', sub: 'EXOTIC CAR IMPORTS' },
@@ -49,7 +49,7 @@
       interactables: [],
       trees: [],
       tunnels: [
-        { x: 740, y: 2 * STEP + ROAD_WIDTH - 54, w: 270, h: 54, name: 'VICE UNDERPASS' },
+        { x: 740, y: 2 * STEP + ROAD_WIDTH - 54, w: 270, h: 54, name: 'VIREO UNDERPASS' },
         { x: 4 * STEP + ROAD_WIDTH - 135, y: 4 * STEP + ROAD_WIDTH + 10, w: 54, h: 270, name: 'CANAL TUNNEL' }
       ],
       waterfront: null,
