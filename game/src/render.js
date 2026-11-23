@@ -533,7 +533,7 @@
 
       var signW = 170;
       var signH = 100;
-      var signX = 975;
+      var signX = 1026;
       var signY = 780;
       if (signX + signW / 2 < view.left || signX - signW / 2 > view.right ||
           signY + signH / 2 < view.top || signY - signH / 2 > view.bottom) return;
