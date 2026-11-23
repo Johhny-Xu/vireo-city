@@ -48,6 +48,7 @@
   function setupDeterministicShot(shot, seed) {
     isShotMode = true;
     shotType = shot;
+    var shotCamera = null;
 
     var actualSeed = seed ? parseInt(seed, 10) : 1986;
     if (isNaN(actualSeed)) actualSeed = 1986;
@@ -72,6 +73,7 @@
       VC.player.facing = -Math.PI * 0.72;
       VC.camera.snapTo(fightX, fightY);
       VC.camera.zoom = 1.50;
+      shotCamera = { zoom: 1.50, leadDist: 70 };
       VC.Input.mouse.screenX = 880;
       VC.Input.mouse.screenY = 300;
       gameTime = 6.4;
@@ -118,7 +120,7 @@
           downed.y = fightY + 76;
           downed.downed = true;
           downed.heading = -1.05;
-          downed.shirtColor = '#ef3f7b';
+          downed.shirtColor = '#351d2a';
           downed.pantsColor = '#263238';
         }
       }
@@ -139,6 +141,7 @@
 
       VC.camera.snapTo(spawnX, spawnY);
       VC.camera.zoom = 1.55;
+      shotCamera = { zoom: 1.55, leadDist: 70 };
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
       if (VC.pedestrians) {
@@ -252,6 +255,33 @@
         flowThree.speed = 188; flowThree.vx = 188; flowThree.lightsOn = true;
         VC.traffic.vehicles.push({ vehicle: flowThree });
       }
+      // Fixed curb-side cover placements keep the crowd visible without
+      // blocking the kestrel or scattering into the road.
+      if (VC.pedestrians) {
+        VC.pedestrians.MAX_PEDESTRIANS = 9;
+        VC.pedestrians.initDeterministic(VC.city, VC.player);
+        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(9, VC.player);
+        var chaseCrowdOffsets = [
+          [-119.72,49.30], [-77.46,-49.30], [84.51,49.30], [56.34,-49.30],
+          [-183.10,-119.72], [-28.17,-105.63], [126.76,-112.68],
+          [-169.01,126.76], [147.89,112.68]
+        ];
+        for (var ci = 0; ci < VC.pedestrians.pedestrians.length && ci < chaseCrowdOffsets.length; ci++) {
+          var crowdPed = VC.pedestrians.pedestrians[ci];
+          crowdPed.x = chaseX + chaseCrowdOffsets[ci][0];
+          crowdPed.y = chaseY + chaseCrowdOffsets[ci][1];
+          crowdPed.hasUmbrella = ci === 1 || ci === 3 || ci === 5 || ci === 7;
+          crowdPed.umbrellaColor = ci === 1 ? '#ffcc44' : (ci === 3 ? '#00f0ff' : (ci === 5 ? '#ff4fa3' : '#ff8c42'));
+          crowdPed.shirtColor = ci % 3 === 0 ? '#ffd166' : (ci % 3 === 1 ? '#00f0c8' : '#ff5d8f');
+          if (ci === 2 || ci === 5) {
+            crowdPed.state = 'fleeing';
+            crowdPed.stateTimer = 4.0;
+            crowdPed.heading = ci === 2 ? Math.PI : 0;
+          } else {
+            crowdPed.heading = ci % 2 ? Math.PI : 0.1;
+          }
+        }
+      }
       // Three still-frame fireballs on a left-up to right-down diagonal.
       // No blast falls inside 120px of the player, and two are beyond 150px.
       if (VC.spawnExplosion) {
@@ -273,6 +303,7 @@
       if (VC.hud && VC.hud.clearToasts) VC.hud.clearToasts();
 
       VC.camera.snapTo(chaseX - 10, chaseY - 28);
+      shotCamera = { zoom: 1.42, leadDist: 145 };
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
@@ -316,8 +347,12 @@
       VC.player.vx = 240;
       VC.player.vy = 0;
       VC.player.facing = 0.1;
-      VC.camera.zoom = 1.42;
-      VC.camera.leadDist = 145;
+    }
+    // Restore the requested camera only after the settle update has run,
+    // since Player.update resets zoom and lead distance for vehicle/on-foot branches.
+    if (shotCamera) {
+      VC.camera.zoom = shotCamera.zoom;
+      VC.camera.leadDist = shotCamera.leadDist;
     }
   }
 
