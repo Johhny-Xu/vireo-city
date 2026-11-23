@@ -151,8 +151,8 @@
         if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(22, VC.player);
         // Keep a readable cluster of umbrella pedestrians in the road-facing frame.
         var streetPedPositions = [
-          [690,680], [800,680], [690,735], [815,735],
-          [710,640], [815,705], [830,690], [800,740]
+          [660,640], [800,680], [640,760], [815,735],
+          [710,640], [815,705], [830,690], [840,760]
         ];
         for (var spi = 0; spi < streetPedPositions.length && spi < VC.pedestrians.pedestrians.length; spi++) {
           var streetPed = VC.pedestrians.pedestrians[spi];
@@ -192,9 +192,24 @@
           disabled: false,
           heavy: false
         });
+        var streetPoliceCruiserTwo = new VC.Vehicle('interceptor', 700, 748, -0.8);
+        streetPoliceCruiserTwo.speed = 0;
+        streetPoliceCruiserTwo.vx = 0;
+        streetPoliceCruiserTwo.vy = 0;
+        streetPoliceCruiserTwo.lightsOn = true;
+        streetPoliceCruiserTwo.sirenOn = true;
+        streetPoliceCruiserTwo.isPolice = true;
+        VC.police.cruisers.push({
+          vehicle: streetPoliceCruiserTwo,
+          shootTimer: 1.4,
+          sirenPhase: Math.PI,
+          state: 'chase',
+          disabled: false,
+          heavy: false
+        });
       }
-      if (VC.wanted) VC.wanted.setLevel(1, VC.player);
-      VC.player.wantedLevel = 1;
+      if (VC.wanted) VC.wanted.setLevel(2, VC.player);
+      VC.player.wantedLevel = 2;
       if (VC.weather) VC.weather.forceState('HEAVY_RAIN');
 
     // ── drive ──────────────────────────────────────────────────────────────
