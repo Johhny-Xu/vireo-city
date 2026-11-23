@@ -56,7 +56,7 @@
     VC.RNG = new VC.Mulberry32(actualSeed);
     VC.city = VC.City.generate(actualSeed);
     if (VC.RNG.setSeed) VC.RNG.setSeed(actualSeed);
-    if (VC.Weapons) VC.Weapons.syncCityBoxes(VC.city);
+    if (VC.Weapons) VC.Weapons.syncWeaponCrateBoxes(VC.city);
     VC.camera.setBounds(0, 0, VC.city.worldWidth, VC.city.worldHeight);
 
     // ── title ──────────────────────────────────────────────────────────────
@@ -405,6 +405,32 @@
         ctx.restore();
       }
 
+      // Shot-only firefight hero rim: a warm, broken arc separates the
+      // protagonist from the cyan aiming reticle already on the ground.
+      if (shotType === 'firefight' && VC.player) {
+        var heroX = 640 + (VC.player.x - VC.camera.x) * VC.camera.zoom;
+        var heroY = 400 + (VC.player.y - VC.camera.y) * VC.camera.zoom;
+        var heroRadius = 18 * VC.camera.zoom;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,174,68,0.96)';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#ff9d38';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(heroX, heroY, heroRadius, 0.18, 1.42);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(heroX, heroY, heroRadius, 1.72, 2.96);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(heroX, heroY, heroRadius, 3.28, 4.52);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(heroX, heroY, heroRadius, 4.82, 6.06);
+        ctx.stroke();
+        ctx.restore();
+      }
+
       // Shot-only chase mission beacon: bright forward-side objective marker,
       // drawn in world-to-screen space so it remains level with the player.
       if (shotType === 'chase') {
@@ -697,7 +723,7 @@
     VC.RNG = new VC.Mulberry32(initialSeed);
     VC.city = VC.City.generate(initialSeed);
     if (VC.RNG && VC.RNG.setSeed) VC.RNG.setSeed(initialSeed);
-    if (VC.Weapons) VC.Weapons.syncCityBoxes(VC.city);
+    if (VC.Weapons) VC.Weapons.syncWeaponCrateBoxes(VC.city);
     VC.camera.setBounds(0, 0, VC.city.worldWidth, VC.city.worldHeight);
 
     var startX = 740, startY = 705;

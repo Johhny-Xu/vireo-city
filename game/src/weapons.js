@@ -98,7 +98,7 @@
   var bulletDecals = [];
   var weaponBoxes = [];
 
-  function syncCityBoxes(city) {
+  function syncWeaponCrateBoxes(city) {
     weaponBoxes.length = 0;
     if (!city || !city.interactables) return;
     for (var i = 0; i < city.interactables.length; i++) {
@@ -489,7 +489,7 @@
     getNearbyBox: getNearbyBox,
     pickupNearby: pickupNearby,
     getDef: getDef,
-    syncCityBoxes: syncCityBoxes,
+    syncWeaponCrateBoxes: syncWeaponCrateBoxes,
     getSaveData: getSaveData,
     fromSaveData: fromSaveData,
     muzzleFlashes: muzzleFlashes,

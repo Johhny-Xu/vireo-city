@@ -121,12 +121,12 @@
   };
 
   // ── Helper: active mission def ─────────────────────────────────────────────
-  function getMission() {
+  function getCurrentMission() {
     return MISSION_LIST[state.currentIndex] || null;
   }
 
   function getObjective() {
-    var m = getMission();
+    var m = getCurrentMission();
     if (!m) return null;
     return m.objectives[state.objectiveIndex] || null;
   }
@@ -136,16 +136,17 @@
     state: state,
     list: MISSION_LIST,
 
-    getMission: getMission,
+    getMission: getCurrentMission,
+    getCurrentMission: getCurrentMission,
     getObjective: getObjective,
 
     // Start the next mission (or current if not started)
     startCurrent: function() {
-      var m = getMission();
+      var m = getCurrentMission();
       if (!m) return;
       if (m.id === 'black_sun' && (!state.completedIds || !state.completedIds.ghost_convoy)) {
         state.currentIndex = 6;
-        m = getMission();
+        m = getCurrentMission();
       }
       state.active = true;
       state.objectiveIndex = 0;
@@ -163,7 +164,7 @@
 
     // Advance to next sub-objective
     advanceObjective: function() {
-      var m = getMission();
+      var m = getCurrentMission();
       if (!m) return;
       state.objectiveDone[state.objectiveIndex] = true;
       state.objectiveIndex++;
@@ -177,7 +178,7 @@
     },
 
     completeMission: function() {
-      var m = getMission();
+      var m = getCurrentMission();
       if (!m) return;
       state.active = false;
       state.banner = { title: m.title, reward: m.reward, timer: 5.0 };
@@ -329,7 +330,7 @@
       state.objectiveIndex = typeof d.objectiveIndex === 'number' ? d.objectiveIndex : 0;
       state.active         = !!d.active;
       state.takeoutCount   = typeof d.takeoutCount   === 'number' ? d.takeoutCount   : 0;
-      var m = getMission();
+      var m = getCurrentMission();
       state.objectiveDone  = m ? m.objectives.map(function(_, i) { return i < state.objectiveIndex; }) : [];
     }
   };

@@ -31,7 +31,7 @@
   // Police comment: cruisers, motorcycles, and rangers now have distinct pursuit roles and braking behavior.
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  function wantedLevel() {
+  function getCurrentWantedLevel() {
     return VC.wanted ? VC.wanted.level : 0;
   }
 
@@ -46,8 +46,8 @@
     sx = Math.max(50, Math.min(VC.city.worldWidth - 50, sx));
     sy = Math.max(50, Math.min(VC.city.worldHeight - 50, sy));
 
-    var heavy = wantedLevel() >= 6;
-    var policeType = heavy ? 'ranger' : (wantedLevel() >= 3 && policeSpawnIndex % 4 === 0 ? 'motorcycle' : 'interceptor');
+    var heavy = getCurrentWantedLevel() >= 6;
+    var policeType = heavy ? 'ranger' : (getCurrentWantedLevel() >= 3 && policeSpawnIndex % 4 === 0 ? 'motorcycle' : 'interceptor');
     policeSpawnIndex++;
     var v = new VC.Vehicle(policeType, sx, sy, angle);
     v.speed = 0;
