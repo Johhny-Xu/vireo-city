@@ -71,7 +71,7 @@
       basePlayingScene(fightX, fightY, 5900, 82, 35, 2);
       VC.player.facing = -Math.PI * 0.72;
       VC.camera.snapTo(fightX, fightY);
-      VC.camera.zoom = 1.40;
+      VC.camera.zoom = 1.50;
       VC.Input.mouse.screenX = 880;
       VC.Input.mouse.screenY = 300;
       gameTime = 6.4;
@@ -81,9 +81,9 @@
         VC.police.seedFootOfficers(3, VC.player);
         var fightOfficers = VC.police.footOfficers;
         if (fightOfficers.length) {
-          fightOfficers[0].x = fightX + 138; fightOfficers[0].y = fightY - 82;
-          fightOfficers[1].x = fightX + 178; fightOfficers[1].y = fightY + 38;
-          fightOfficers[2].x = fightX - 155; fightOfficers[2].y = fightY - 118;
+          fightOfficers[0].x = fightX + 118; fightOfficers[0].y = fightY - 62;
+          fightOfficers[1].x = fightX + 132; fightOfficers[1].y = fightY + 28;
+          fightOfficers[2].x = fightX - 112; fightOfficers[2].y = fightY - 88;
           for (var oi = 0; oi < fightOfficers.length; oi++) {
             fightOfficers[oi].shootTimer = 0.08 + oi * 0.12;
             fightOfficers[oi].enemyColor = '#ff2aa1';
@@ -92,14 +92,35 @@
       }
       if (VC.Weapons) {
         VC.Weapons.muzzleFlashes.push({ x: fightX + 30, y: fightY - 18, angle: 0.2, life: 0.22, maxLife: 0.22 });
+        VC.Weapons.muzzleFlashes.push({ x: fightX + 118, y: fightY - 62, angle: Math.PI, life: 0.28, maxLife: 0.28 });
+        VC.Weapons.muzzleFlashes.push({ x: fightX - 112, y: fightY - 88, angle: 0.15, life: 0.24, maxLife: 0.24 });
         VC.Weapons.spawnImpactTracer(fightX + 30, fightY - 18, fightX + 155, fightY - 92, 'scatter12');
         VC.Weapons.spawnImpactTracer(fightX + 138, fightY - 82, fightX + 34, fightY - 22, 'vireo9');
         VC.Weapons.spawnImpactTracer(fightX + 178, fightY + 38, fightX + 42, fightY - 12, 'vireo9');
         VC.Weapons.spawnImpactTracer(fightX - 155, fightY - 118, fightX + 26, fightY - 24, 'vireo9');
+        VC.Weapons.spawnImpactTracer(fightX + 118, fightY - 62, fightX - 18, fightY - 20, 'scatter12');
+        VC.Weapons.spawnImpactTracer(fightX - 112, fightY - 88, fightX + 24, fightY - 12, 'scatter12');
         VC.Weapons.bulletDecals.push({ x: fightX + 155, y: fightY - 92, alpha: 0.9, life: 18 });
         VC.Weapons.bulletDecals.push({ x: fightX - 24, y: fightY + 18, alpha: 0.8, life: 18 });
         VC.Weapons.bulletDecals.push({ x: fightX + 82, y: fightY - 28, alpha: 0.75, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX + 108, y: fightY + 46, alpha: 0.85, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX - 68, y: fightY - 38, alpha: 0.8, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX + 142, y: fightY - 105, alpha: 0.75, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX - 142, y: fightY + 58, alpha: 0.72, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX + 18, y: fightY + 82, alpha: 0.68, life: 18 });
         VC.Weapons.spawnShellCasing(fightX + 28, fightY - 14, 0.2);
+      }
+      if (VC.pedestrians) {
+        VC.pedestrians.initDeterministic(VC.city, VC.player);
+        if (VC.pedestrians.pedestrians.length >= 8) {
+          var downed = VC.pedestrians.pedestrians[7];
+          downed.x = fightX + 92;
+          downed.y = fightY + 76;
+          downed.downed = true;
+          downed.heading = -1.05;
+          downed.shirtColor = '#ef3f7b';
+          downed.pantsColor = '#263238';
+        }
       }
       if (VC.hud) VC.hud.toast('RECTO RUNNERS ENGAGED // COMBAT ZONE', 4.0);
       // Firefight comment: fixed enemy spacing and weapon ammo make shot=firefight repeatable.
@@ -117,13 +138,13 @@
       if (VC.traffic) VC.traffic.vehicles.push({ vehicle: nearCab });
 
       VC.camera.snapTo(spawnX, spawnY);
-      VC.camera.zoom = 1.45;
+      VC.camera.zoom = 1.55;
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
       if (VC.pedestrians) {
-        VC.pedestrians.MAX_PEDESTRIANS = 16;
+        VC.pedestrians.MAX_PEDESTRIANS = 24;
         VC.pedestrians.initDeterministic(VC.city, VC.player);
-        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(16, VC.player);
+        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(22, VC.player);
         // Add deterministic umbrella/flee offsets to the existing crowd.
         for (var pi = 0; pi < VC.pedestrians.pedestrians.length; pi++) {
           var existingPed = VC.pedestrians.pedestrians[pi];
@@ -168,14 +189,14 @@
 
     // ── chase (new) ────────────────────────────────────────────────────────
     } else if (shot === 'chase') {
-      var chaseX = 840, chaseY = 723.5;
+      var chaseX = 1360, chaseY = 723.5;
       var chaseCar = new VC.Vehicle('kestrel', chaseX, chaseY, 0.1);
       chaseCar.speed = 240; chaseCar.vx = 240; chaseCar.lightsOn = true;
       if (VC.addSkidmark) {
         VC.addSkidmark(680, 714, 820, 714, 0.60);
         VC.addSkidmark(680, 733, 820, 733, 0.60);
       }
-      basePlayingScene(chaseX, chaseY, 12800, 55, 20, 5);
+      basePlayingScene(chaseX, chaseY, 12800, 100, 20, 5);
       VC.player.vehicle = chaseCar;
       chaseCar.driver = VC.player;
       if (VC.wanted) VC.wanted.setLevel(5, VC.player);
@@ -191,23 +212,23 @@
         // Manually position the cruisers on the same road behind
         var cr = VC.police.cruisers;
         if (cr.length >= 1) {
-          cr[0].vehicle.x = chaseX - 140; cr[0].vehicle.y = chaseY + 12;
-          cr[0].vehicle.heading = 0; cr[0].vehicle.speed = 220;
+          cr[0].vehicle.x = chaseX - 78; cr[0].vehicle.y = chaseY + 82;
+          cr[0].vehicle.heading = 0.10; cr[0].vehicle.speed = 220;
           cr[0].vehicle.health = 32;
           cr[0].sirenPhase = 0;
         }
         if (cr.length >= 2) {
-          cr[1].vehicle.x = chaseX - 220; cr[1].vehicle.y = chaseY - 15;
-          cr[1].vehicle.heading = 0.08; cr[1].vehicle.speed = 200;
+          cr[1].vehicle.x = chaseX - 82; cr[1].vehicle.y = chaseY - 78;
+          cr[1].vehicle.heading = -0.08; cr[1].vehicle.speed = 200;
           cr[1].sirenPhase = Math.PI;
         }
         if (cr.length >= 3) {
-          cr[2].vehicle.x = chaseX - 105; cr[2].vehicle.y = chaseY + 82;
-          cr[2].vehicle.heading = -0.18; cr[2].vehicle.speed = 210;
+          cr[2].vehicle.x = chaseX + 180; cr[2].vehicle.y = chaseY - 90;
+          cr[2].vehicle.heading = 0.18; cr[2].vehicle.speed = 210;
           cr[2].sirenPhase = Math.PI * 0.5;
         }
         if (cr.length >= 4) {
-          cr[3].vehicle.x = chaseX - 48; cr[3].vehicle.y = chaseY - 92;
+          cr[3].vehicle.x = chaseX - 175; cr[3].vehicle.y = chaseY - 145;
           cr[3].vehicle.heading = 0.22; cr[3].vehicle.speed = 195;
           cr[3].sirenPhase = Math.PI * 1.5;
           cr[3].disabled = false;
@@ -215,8 +236,30 @@
         if (cr.length >= 3) {
           cr[2].vehicle.health = 18;
           cr[2].vehicle.damageFlash = 0.8;
-          if (VC.explodeVehicle) VC.explodeVehicle(cr[2].vehicle);
+          cr[2].vehicle.exploded = false;
         }
+      }
+      // Two normal cars to either side and one ahead turn the chase into a
+      // populated traffic frame while keeping the kestrel unobstructed.
+      if (VC.traffic) {
+        var flowOne = new VC.Vehicle('ronin', chaseX - 155, chaseY + 78, 0.12);
+        flowOne.speed = 205; flowOne.vx = 205; flowOne.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: flowOne });
+        var flowTwo = new VC.Vehicle('cab', chaseX + 145, chaseY - 92, 0.08);
+        flowTwo.speed = 225; flowTwo.vx = 225; flowTwo.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: flowTwo });
+        var flowThree = new VC.Vehicle('hauler', chaseX + 42, chaseY + 118, 0.18);
+        flowThree.speed = 188; flowThree.vx = 188; flowThree.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: flowThree });
+      }
+      // Three still-frame fireballs on a left-up to right-down diagonal.
+      // No blast falls inside 120px of the player, and two are beyond 150px.
+      if (VC.spawnExplosion) {
+        VC.spawnExplosion(chaseX - 190, chaseY - 104, 0.78);
+        VC.spawnExplosion(chaseX + 180, chaseY + 66, 0.58);
+        VC.spawnExplosion(chaseX + 82, chaseY - 178, 0.68);
+      } else if (VC.updateVehicleEffects) {
+        VC.updateVehicleEffects(0.15);
       }
       // The blast hurts the player, and a single still frame would keep the full
       // red hit flash on screen, tinting the whole cover red.
@@ -229,8 +272,7 @@
       // Start from a clean message stack; only the pursuit call belongs on the cover.
       if (VC.hud && VC.hud.clearToasts) VC.hud.clearToasts();
 
-      VC.camera.snapTo(chaseX + 80, chaseY);
-      VC.camera.zoom = 1.35; VC.camera.leadDist = 145;
+      VC.camera.snapTo(chaseX - 10, chaseY - 28);
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
@@ -260,6 +302,23 @@
     // Force one deterministic update step and camera settle
     VC.camera.update(0.016, VC.player.vehicle || VC.player);
     if (VC.player) VC.player.update(0, VC.city);
+    // Restore chase state after the one settle step, so the frame the shot renders shows the car at speed.
+    if (shotType === 'chase' && VC.player && VC.player.vehicle) {
+      var chaseTailCar = VC.player.vehicle;
+      chaseTailCar.speed = 240;
+      chaseTailCar.vx = 240;
+      chaseTailCar.vy = 0;
+      chaseTailCar.heading = 0.1;
+      chaseTailCar.health = chaseTailCar.maxHealth;
+      chaseTailCar.damageFlash = 0;
+      chaseTailCar.lightsOn = true;
+      VC.player.health = VC.player.maxHealth;
+      VC.player.vx = 240;
+      VC.player.vy = 0;
+      VC.player.facing = 0.1;
+      VC.camera.zoom = 1.42;
+      VC.camera.leadDist = 145;
+    }
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -272,6 +331,79 @@
 
     } else if (VC.gameState === 'playing') {
       VC.Renderer.render(ctx, VC.city, VC.player, VC.camera, gameTime);
+
+      // Shot-only street halo: keep the on-foot protagonist readable over dark rain-slick roads.
+      if ((shotType === 'street' || shotType === 'chase') && VC.player) {
+        var outlineX = 640 + (VC.player.x - VC.camera.x) * VC.camera.zoom;
+        var outlineY = 400 + (VC.player.y - VC.camera.y) * VC.camera.zoom;
+        ctx.save();
+        ctx.setLineDash([7, 5]);
+        ctx.strokeStyle = 'rgba(205,250,255,0.96)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#7deaff';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        var pursuitRadius = shotType === 'chase' ? 38 : 22;
+        ctx.arc(outlineX, outlineY, pursuitRadius * VC.camera.zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // Shot-only firefight downed runner: a high-contrast world-space blood pool
+      // and spread-eagle limbs keep the casualty visible beside the open road.
+      if (shotType === 'firefight') {
+        var downX = 992;
+        var downY = 781;
+        var screenDownX = 640 + (downX - VC.camera.x) * VC.camera.zoom;
+        var screenDownY = 400 + (downY - VC.camera.y) * VC.camera.zoom;
+        ctx.save();
+        ctx.translate(screenDownX, screenDownY);
+        ctx.rotate(-0.35);
+        ctx.fillStyle = 'rgba(18,7,12,0.92)';
+        ctx.beginPath();
+        ctx.ellipse(0, 7, 38, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(92,8,24,0.92)';
+        ctx.beginPath();
+        ctx.ellipse(-5, 5, 29, 10, 0.12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#263238';
+        ctx.beginPath();
+        ctx.moveTo(-8, -9);
+        ctx.lineTo(9, -9);
+        ctx.lineTo(28, -24);
+        ctx.lineTo(34, -18);
+        ctx.lineTo(12, -2);
+        ctx.lineTo(18, 18);
+        ctx.lineTo(11, 21);
+        ctx.lineTo(-2, 5);
+        ctx.lineTo(-15, 21);
+        ctx.lineTo(-22, 17);
+        ctx.lineTo(-12, -2);
+        ctx.lineTo(-34, -16);
+        ctx.lineTo(-29, -23);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#d7a06f';
+        ctx.lineWidth = 6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-10, -2);
+        ctx.lineTo(-34, -16);
+        ctx.moveTo(10, -2);
+        ctx.lineTo(34, -18);
+        ctx.moveTo(-8, 3);
+        ctx.lineTo(-22, 17);
+        ctx.moveTo(10, 3);
+        ctx.lineTo(18, 18);
+        ctx.stroke();
+        ctx.fillStyle = '#b61f48';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 13, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Screen-space combat effects (busted, hit flash, vignette)
       if (VC.combat) VC.combat.renderScreenEffects(ctx, VC.player, gameTime);

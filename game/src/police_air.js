@@ -104,14 +104,15 @@
     },
 
     seedOverhead: function(px, py, offset) {
-      x = px + 175;
-      y = py - 150;
+      x = px - 125;
+      y = py - 205;
       vx = 80;
       vy = 0;
       orbitAngle = offset || -0.55;
       spotX = px;
       spotY = py;
       spotted = true;
+      spotSwing = 0;
       radioTimer = 5.5;
       initialized = true;
       active = true;
@@ -158,10 +159,8 @@
       roll += (Math.max(-0.18, Math.min(0.18, turn * 0.9)) - roll) * Math.min(1, dt * 3);
 
       spotSwing += dt * 1.15;
-      var swingX = Math.sin(spotSwing) * 82 + Math.sin(spotSwing * 0.43) * 28;
-      var swingY = Math.cos(spotSwing * 0.71) * 58;
-      var targetSpotX = p.x + swingX;
-      var targetSpotY = p.y + swingY;
+      var targetSpotX = p.x;
+      var targetSpotY = p.y;
       spotX += (targetSpotX - spotX) * Math.min(1, dt * 2.6);
       spotY += (targetSpotY - spotY) * Math.min(1, dt * 2.6);
 
@@ -217,6 +216,35 @@
       if (!active || !player) return;
       ctx.save();
 
+      // White searchlight cone: it starts at the enlarged aircraft and lands
+      // directly on the player's vehicle in the deterministic chase shot.
+      var beam = ctx.createLinearGradient(x, y, spotX, spotY);
+      beam.addColorStop(0, 'rgba(235,250,255,0.12)');
+      beam.addColorStop(0.35, 'rgba(235,250,255,0.34)');
+      beam.addColorStop(1, 'rgba(255,255,255,0.78)');
+      var coneAngle = Math.atan2(spotY - y, spotX - x);
+      var coneLength = Math.hypot(spotX - x, spotY - y);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(coneAngle);
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(-2, -5);
+      ctx.lineTo(coneLength, -38);
+      ctx.lineTo(coneLength, 38);
+      ctx.lineTo(-2, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.72)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, -5);
+      ctx.lineTo(coneLength, -38);
+      ctx.moveTo(0, 5);
+      ctx.lineTo(coneLength, 38);
+      ctx.stroke();
+      ctx.restore();
+
       // Moving elliptical searchlight pool on the ground
       ctx.translate(spotX, spotY);
       ctx.rotate(Math.atan2(spotY - y, spotX - x) * 0.12);
@@ -260,19 +288,19 @@
       ctx.translate(x, y);
       ctx.rotate(heading);
       ctx.rotate(roll);
-      ctx.scale(1.36, 1.10 + pitch);
+      ctx.scale(1.98, 1.43 + pitch);
 
       // Contrails / wake wisps behind the tail
       ctx.strokeStyle = 'rgba(170,210,230,0.22)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(-40, 0);
-      ctx.bezierCurveTo(-68, -10, -94, 10, -126, -4);
-      ctx.moveTo(-38, 8);
-      ctx.bezierCurveTo(-70, 18, -88, 34, -112, 26);
+      ctx.moveTo(-48, 0);
+      ctx.bezierCurveTo(-76, -10, -104, 10, -138, -4);
+      ctx.moveTo(-46, 8);
+      ctx.bezierCurveTo(-78, 18, -98, 34, -124, 26);
       ctx.stroke();
 
-      drawRotor(ctx, 0, 0, 58, (gameTime || 0) * 26, 'rgba(210,235,255,0.72)');
+      drawRotor(ctx, 0, 0, 68, (gameTime || 0) * 26, 'rgba(210,235,255,0.72)');
 
       // A soft halo separates the dark airframe from the dark city below it.
       var halo = ctx.createRadialGradient(0, 0, 10, 0, 0, 74);
@@ -288,37 +316,97 @@
       ctx.strokeStyle = '#d6e8f7';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.moveTo(28, -14);
-      ctx.quadraticCurveTo(44, 0, 28, 14);
-      ctx.lineTo(-22, 16);
-      ctx.quadraticCurveTo(-34, 10, -34, 0);
-      ctx.quadraticCurveTo(-34, -10, -22, -16);
+      ctx.moveTo(38, -14);
+      ctx.quadraticCurveTo(54, 0, 38, 14);
+      ctx.lineTo(-28, 16);
+      ctx.quadraticCurveTo(-40, 10, -40, 0);
+      ctx.quadraticCurveTo(-40, -10, -28, -16);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
 
       // Cockpit glass catches the city glow.
-      ctx.fillStyle = 'rgba(120,215,255,0.42)';
+      ctx.fillStyle = 'rgba(145,225,255,0.58)';
       ctx.beginPath();
-      ctx.ellipse(20, 0, 9, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(28, 0, 14, 9, 0, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = 'rgba(235,250,255,0.86)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(24, -8);
+      ctx.lineTo(38, 0);
+      ctx.lineTo(24, 8);
+      ctx.stroke();
 
       ctx.fillStyle = '#263850';
-      ctx.fillRect(-34, -4, 17, 8);
-      ctx.fillRect(-48, -2, 18, 4);
+      ctx.fillRect(-40, -4, 17, 8);
+      ctx.fillRect(-62, -3, 24, 6);
       ctx.strokeStyle = '#b7c9d8';
       ctx.beginPath();
-      ctx.moveTo(-20, -18);
-      ctx.lineTo(-20, -26);
-      ctx.moveTo(-20, -26);
-      ctx.lineTo(14, -26);
+      ctx.moveTo(-24, -18);
+      ctx.lineTo(-24, -29);
+      ctx.moveTo(-24, -29);
+      ctx.lineTo(18, -29);
+      ctx.lineTo(18, -17);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-62, -3);
+      ctx.lineTo(-72, -12);
+      ctx.moveTo(-62, 3);
+      ctx.lineTo(-72, 12);
+      ctx.stroke();
+      ctx.fillStyle = '#b7c9d8';
+      ctx.beginPath();
+      ctx.arc(-74, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#8eaac0';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-74, 0);
+      ctx.lineTo(-74, 0);
+      ctx.moveTo(-74, 0);
+      ctx.lineTo(-80, -5);
+      ctx.moveTo(-74, 0);
+      ctx.lineTo(-68, 5);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(-74, 0);
+      ctx.rotate((gameTime || 0) * 34);
+      ctx.strokeStyle = 'rgba(220,238,250,0.88)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(7, 0);
+      ctx.moveTo(0, -7);
+      ctx.lineTo(0, 7);
+      ctx.stroke();
+      ctx.restore();
+
+      // Landing skids.
+      ctx.strokeStyle = '#d8e7ef';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-16, 15);
+      ctx.lineTo(-16, 23);
+      ctx.lineTo(24, 23);
+      ctx.moveTo(24, 15);
+      ctx.lineTo(24, 23);
+      ctx.moveTo(-20, 24);
+      ctx.lineTo(28, 24);
+      ctx.moveTo(-16, -15);
+      ctx.lineTo(-16, -23);
+      ctx.lineTo(24, -23);
+      ctx.moveTo(24, -15);
+      ctx.lineTo(24, -23);
+      ctx.moveTo(-20, -24);
+      ctx.lineTo(28, -24);
       ctx.stroke();
 
       // Twin red/blue rotating beacon
       var phase = Math.floor((gameTime || 0) * 7) % 2;
       ctx.fillStyle = phase ? '#ff1744' : '#00aaff';
       ctx.shadowColor = ctx.fillStyle;
-      ctx.shadowBlur = 18;
+      ctx.shadowBlur = 24;
       ctx.beginPath();
       ctx.arc(2, -10, 4.5, 0, Math.PI * 2);
       ctx.fill();

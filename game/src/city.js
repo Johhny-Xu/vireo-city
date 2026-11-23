@@ -423,23 +423,26 @@
     var windowColorsMagenta = VC.PALETTE.windowLitMagenta;
 
     var style = rng.randChoice(['modern_glass', 'art_deco', 'brick_retro', 'concrete_brutal']);
+    var isDarkBuilding = rng.randBool(0.35);
 
     // Generate lit window matrix
-    var windowCols = Math.max(3, Math.floor(w / 18));
-    var windowRows = Math.max(2, Math.floor(h / 24));
+    var windowCols = Math.max(4, Math.floor(w / 11));
+    var windowRows = Math.max(3, Math.floor(h / 15));
     var windows = [];
 
     for (var r = 0; r < windowRows; r++) {
       for (var c = 0; c < windowCols; c++) {
-        var isLit = rng.randBool(0.55);
+        var isLit = rng.randBool(isDarkBuilding ? 0.12 : 0.52);
         var winColor = VC.PALETTE.windowDark;
         var flickers = false;
 
         if (isLit) {
-          var colorFamily = rng.randChoice(['amber', 'cyan', 'magenta']);
-          if (colorFamily === 'amber') winColor = rng.randChoice(windowColorsAmber);
-          else if (colorFamily === 'cyan') winColor = rng.randChoice(windowColorsCyan);
-          else winColor = rng.randChoice(windowColorsMagenta);
+          var colorFamily = rng.randChoice(['amber', 'amber', 'amber', 'amber', 'amber', 'amber', 'cyan', 'cyan', 'cyan', 'magenta']);
+          if (colorFamily === 'amber') {
+            winColor = rng.randChoice(['#ffe9b8', '#ffd98a', '#ffcf6a', '#ffc04a']);
+          }
+          else if (colorFamily === 'cyan') winColor = rng.randChoice(['#78bdc8', '#62aebd', '#87c8cf', '#91bfc5']);
+          else winColor = rng.randChoice(['#a94b70', '#934063', '#b85b78']);
 
           if (rng.randBool(0.08)) {
             flickers = true;

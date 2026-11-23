@@ -468,7 +468,7 @@
 
     // ── Mission tracker (upper-center) ───────────────────────────────────────
     renderMissionTracker: function(ctx, timeSec) {
-      var w = 360, h = 50, x = 640 - w / 2, y = 24;
+      var w = 400, h = 50, x = 640 - w / 2, y = 24;
 
       ctx.fillStyle = 'rgba(6,12,20,0.82)';
       ctx.strokeStyle = 'rgba(255,170,0,0.4)';
@@ -549,13 +549,25 @@
       for (var i = 0; i < toasts.length; i++) {
         var t = toasts[i];
         var alpha = Math.min(1, t.time / 0.5);
-        var tw = 260, th = 32, tx = rightX - tw, ty = startY + i * 40;
+        var th = 32, tw = 260, tx = 0, ty = startY + i * 40;
+        var fontSize = 12;
+        ctx.save();
+        ctx.font = 'bold ' + fontSize + 'px "Courier New", monospace';
+        var textWidth = ctx.measureText(t.text).width;
+        while (fontSize > 9 && textWidth > tw - 20) {
+          fontSize--;
+          ctx.font = 'bold ' + fontSize + 'px "Courier New", monospace';
+          textWidth = ctx.measureText(t.text).width;
+        }
+        if (textWidth > tw - 20) tw = textWidth + 24;
+        tx = rightX - tw;
         ctx.save(); ctx.globalAlpha = alpha;
         ctx.fillStyle = 'rgba(10,16,26,0.9)'; ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1.5;
         VC.roundRect(ctx, tx, ty, tw, th, 4); ctx.fill(); ctx.stroke();
-        ctx.font = 'bold 12px "Courier New", monospace'; ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold ' + fontSize + 'px "Courier New", monospace'; ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(t.text, tx + tw / 2, ty + th / 2);
+        ctx.restore();
         ctx.restore();
       }
     },

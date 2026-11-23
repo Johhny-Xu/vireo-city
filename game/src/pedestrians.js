@@ -262,6 +262,53 @@
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    if (this.downed) {
+      ctx.rotate(this.heading || -1);
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.beginPath();
+      ctx.ellipse(0, 5, 16, 7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(76,10,26,0.88)';
+      ctx.beginPath();
+      ctx.ellipse(-1, 2, 23, 9, 0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#351d2a';
+      ctx.beginPath();
+      ctx.moveTo(-9, -5);
+      ctx.lineTo(12, -4);
+      ctx.lineTo(17, 5);
+      ctx.lineTo(-12, 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#4a2633';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(-20, -10);
+      ctx.moveTo(8, 1);
+      ctx.lineTo(22, -8);
+      ctx.moveTo(-8, 6);
+      ctx.lineTo(-20, 15);
+      ctx.moveTo(9, 6);
+      ctx.lineTo(21, 16);
+      ctx.stroke();
+      ctx.fillStyle = '#21151a';
+      ctx.beginPath();
+      ctx.arc(-14, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#d4a070';
+      ctx.beginPath();
+      ctx.arc(-16, -1, 4.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(112,17,38,0.78)';
+      ctx.beginPath();
+      ctx.ellipse(-8, 10, 13, 5, -0.12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
     // 1. Soft blurred drop shadow
     ctx.save();
     ctx.shadowColor = 'rgba(1, 3, 6, 0.82)';
@@ -369,6 +416,8 @@
         [-55,118,'h',1], [55,132,'h',-1], [-95,-125,'v',-1], [92,-140,'v',1],
         [-175,-28,'h',1], [175,-18,'h',-1], [18,-155,'v',1], [-20,155,'v',-1],
         [205,95,'h',-1], [-205,92,'h',1], [128,170,'v',-1], [-128,-155,'v',1]
+        ,[220,-55,'h',-1], [-220,-62,'h',1], [42,205,'v',-1], [-42,-205,'v',1],
+        [188,-188,'h',1], [-188,188,'h',-1]
       ];
       this.pedestrians = [];
       for (var i = 0; i < Math.min(num, offsets.length); i++) {

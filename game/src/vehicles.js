@@ -439,6 +439,86 @@
     ctx.fill();
     ctx.restore();
 
+    // Clear road illumination: bright headlight cones make the vehicle read as
+    // an escaping player car or an active police pursuit at thumbnail scale.
+    if (this.lightsOn) {
+      var isKestrel = this.typeKey === 'kestrel';
+      var isInterceptor = this.typeKey === 'interceptor';
+      var beamLength = isKestrel ? 88 : (isInterceptor ? 58 : 48);
+      var beamWidth = isKestrel ? 30 : 18;
+      var beam = ctx.createLinearGradient(hw, 0, hw + beamLength, 0);
+      beam.addColorStop(0, isKestrel ? 'rgba(255,255,225,0.82)' : 'rgba(210,238,255,0.62)');
+      beam.addColorStop(0.38, 'rgba(225,242,255,0.38)');
+      beam.addColorStop(1, 'rgba(180,220,255,0)');
+      ctx.save();
+      ctx.fillStyle = beam;
+      ctx.beginPath();
+      ctx.moveTo(hw - 2, -hh + 5);
+      ctx.lineTo(hw + beamLength, -beamWidth);
+      ctx.lineTo(hw + beamLength, beamWidth);
+      ctx.lineTo(hw - 2, hh - 5);
+      ctx.closePath();
+      ctx.fill();
+
+      if (isKestrel) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.98)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#eaffff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(hw - 1, -hh + 4);
+        ctx.lineTo(hw + beamLength, -beamWidth * 0.62);
+        ctx.moveTo(hw - 1, hh - 4);
+        ctx.lineTo(hw + beamLength, beamWidth * 0.62);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (isKestrel) {
+        ctx.strokeStyle = 'rgba(255,255,235,0.92)';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#fffbd0';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(hw - 1, -hh + 6);
+        ctx.lineTo(hw + beamLength, -beamWidth * 0.48);
+        ctx.moveTo(hw - 1, hh - 6);
+        ctx.lineTo(hw + beamLength, beamWidth * 0.48);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    if (this.typeKey === 'kestrel' && this.driver === VC.player) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(230,255,255,1)';
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#aefaff';
+      ctx.shadowBlur = 12;
+      VC.roundRect(ctx, -hw - 2, -hh - 2, w + 4, h + 4, 7);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (this.typeKey === 'kestrel' && this.driver === VC.player) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#fff4ba';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.moveTo(-w * 0.18, -hh + 2);
+      ctx.lineTo(w * 0.18, -hh + 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(205,252,255,0.75)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-w * 0.12, -hh + 4);
+      ctx.lineTo(w * 0.22, -hh + 4);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // 2. Wheels (Tires with rims, front wheels turn with steer angle)
     var wheelW = w * 0.22;
     var wheelH = 4.5;
@@ -669,6 +749,26 @@
 
   VC.Vehicle = Vehicle;
 
+  function spawnExplosion(x, y, strength) {
+    strength = Math.max(0.35, Math.min(1, strength || 0.65));
+    vehicleExplosions.push({
+      x: x, y: y, radius: 48 * strength, life: 0.90, maxLife: 0.90,
+      flash: 1, strength: strength
+    });
+    for (var i = 0; i < 18; i++) {
+      var ang = (i / 18) * Math.PI * 2 + i * 0.37;
+      var spd = (55 + (i % 5) * 31) * strength;
+      explosionFragments.push({
+        x: x, y: y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - 18,
+        life: 0.55 + (i % 7) * 0.09,
+        maxLife: 1.16,
+        size: 1.5 + (i % 4) * 1.1
+      });
+    }
+  }
+
   function explodeVehicle(vehicle) {
     if (!vehicle || vehicle.exploded) return;
     vehicle.exploded = true;
@@ -678,7 +778,7 @@
     vehicle.vy = 0;
 
     vehicleExplosions.push({
-      x: vehicle.x, y: vehicle.y, radius: 10, life: 1.25, maxLife: 1.25,
+      x: vehicle.x, y: vehicle.y, radius: 48, life: 0.9, maxLife: 0.9,
       flash: 1
     });
     for (var i = 0; i < 28; i++) {
@@ -741,7 +841,8 @@
   function updateExplosionEffects(dt) {
     for (var i = vehicleExplosions.length - 1; i >= 0; i--) {
       vehicleExplosions[i].life -= dt;
-      vehicleExplosions[i].radius += dt * 210;
+      vehicleExplosions[i].radius += dt * 95;
+      if (vehicleExplosions[i].radius > 80) vehicleExplosions[i].radius = 80;
       if (vehicleExplosions[i].life <= 0) vehicleExplosions.splice(i, 1);
     }
     for (var j = explosionFragments.length - 1; j >= 0; j--) {
@@ -759,20 +860,43 @@
     for (var i = 0; i < vehicleExplosions.length; i++) {
       var e = vehicleExplosions[i];
       var alpha = Math.max(0, e.life / e.maxLife);
-      var g = ctx.createRadialGradient(e.x, e.y, 4, e.x, e.y, e.radius);
-      g.addColorStop(0, 'rgba(255,250,180,' + alpha + ')');
-      g.addColorStop(0.25, 'rgba(255,120,20,' + (alpha * 0.95) + ')');
-      g.addColorStop(0.65, 'rgba(160,28,12,' + (alpha * 0.45) + ')');
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,215,90,' + (alpha * 0.16) + ')';
+      ctx.beginPath();
+      ctx.ellipse(e.x, e.y + 16, e.radius * 0.82, e.radius * 0.30, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      var g = ctx.createRadialGradient(e.x, e.y, 3, e.x, e.y, e.radius * 0.68);
+      g.addColorStop(0, 'rgba(255,255,255,' + alpha + ')');
+      g.addColorStop(0.18, 'rgba(255,238,120,' + (alpha * 0.98) + ')');
+      g.addColorStop(0.48, 'rgba(255,105,18,' + (alpha * 0.92) + ')');
+      g.addColorStop(0.78, 'rgba(155,26,8,' + (alpha * 0.38) + ')');
       g.addColorStop(1, 'rgba(20,8,8,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+      ctx.arc(e.x, e.y - 8, e.radius * 0.68, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,210,120,' + (alpha * 0.8) + ')';
-      ctx.lineWidth = 3;
+
+      ctx.strokeStyle = 'rgba(255,196,92,' + (alpha * 0.82) + ')';
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#ff8a18';
+      ctx.shadowBlur = 5;
       ctx.beginPath();
-      ctx.arc(e.x, e.y, e.radius * 0.82, 0, Math.PI * 2);
+      ctx.arc(e.x, e.y, Math.max(60, Math.min(80, e.radius)), 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+
+      for (var s = 0; s < 7; s++) {
+        var sx = e.x + ((s % 3) - 1) * (12 + s * 2);
+        var sy = e.y - 28 - s * 13 - (1 - alpha) * 18;
+        ctx.save();
+        ctx.globalAlpha = alpha * (0.82 - s * 0.07);
+        ctx.fillStyle = s < 3 ? '#25252a' : '#17191e';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 9 + s * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     }
     for (var j = 0; j < explosionFragments.length; j++) {
       var p = explosionFragments[j];
@@ -782,6 +906,7 @@
   }
 
   VC.explodeVehicle = explodeVehicle;
+  VC.spawnExplosion = spawnExplosion;
   VC.updateVehicleEffects = updateExplosionEffects;
   VC.renderVehicleEffects = renderExplosionEffects;
 })();
