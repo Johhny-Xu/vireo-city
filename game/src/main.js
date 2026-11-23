@@ -73,8 +73,8 @@
       basePlayingScene(fightX, fightY, 5900, 82, 35, 2);
       VC.player.facing = -Math.PI * 0.72;
       VC.camera.snapTo(fightX, fightY);
-      VC.camera.zoom = 1.50;
-      shotCamera = { zoom: 1.50, leadDist: 70 };
+      VC.camera.zoom = 2.2;
+      shotCamera = { zoom: 2.2, leadDist: 70 };
       VC.Input.mouse.screenX = 880;
       VC.Input.mouse.screenY = 300;
       gameTime = 6.4;
@@ -141,8 +141,8 @@
       if (VC.traffic) VC.traffic.vehicles.push({ vehicle: nearCab });
 
       VC.camera.snapTo(spawnX, spawnY);
-      VC.camera.zoom = 2.05;
-      shotCamera = { zoom: 2.05, leadDist: 70 };
+      VC.camera.zoom = 2.4;
+      shotCamera = { zoom: 2.4, leadDist: 70 };
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
       if (VC.pedestrians) {
