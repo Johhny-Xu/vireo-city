@@ -380,10 +380,10 @@
     // 1. Drop shadow (soft blurred dark ellipse)
     ctx.save();
     ctx.shadowColor = 'rgba(1, 3, 7, 0.85)';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 6;
     ctx.fillStyle = 'rgba(2, 4, 8, 0.7)';
     ctx.beginPath();
-    ctx.ellipse(0, 4, 16, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 4, 13, 10, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
@@ -395,16 +395,25 @@
     var legOffset2 = -walkSin * 6;
 
     // 2. Animated Legs & Boots
+    ctx.fillStyle = VC.PALETTE.playerPants;
+    ctx.fillRect(-6 + legOffset1, -12, 5, 8);
+    ctx.fillRect(-6 + legOffset2, 2, 5, 8);
     ctx.fillStyle = VC.PALETTE.playerBoots;
     // Left leg
-    ctx.fillRect(-6 + legOffset1, -12, 5, 10);
+    ctx.fillRect(-6 + legOffset1, -4, 5, 4);
     // Right leg
-    ctx.fillRect(-6 + legOffset2, 2, 5, 10);
+    ctx.fillRect(-6 + legOffset2, 8, 5, 4);
 
-    // 3. Torso / Shoulders (Dark street jacket)
+    // 3. Torso / Shoulders (Amber street jacket)
     ctx.fillStyle = this.hitFlashTimer > 0 ? '#ff3344' : VC.PALETTE.playerJacket;
     VC.roundRect(ctx, -10, -11, 20, 22, 6);
     ctx.fill();
+    ctx.save();
+    ctx.strokeStyle = '#fff1b8';
+    ctx.lineWidth = 1.25;
+    VC.roundRect(ctx, -10, -11, 20, 22, 6);
+    ctx.stroke();
+    ctx.restore();
 
     // Jacket collar trim
     ctx.fillStyle = VC.PALETTE.playerJacketCollar;
@@ -453,10 +462,10 @@
     ctx.arc(0, 0, 6.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hair
+    // Hair, shifted toward the back of the head so the face remains visible
     ctx.fillStyle = VC.PALETTE.playerHair;
     ctx.beginPath();
-    ctx.arc(-2, 0, 7, 0, Math.PI * 2);
+    ctx.arc(-3.5, -1, 5.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();

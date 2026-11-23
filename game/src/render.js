@@ -35,6 +35,7 @@
 
       // 5. Buildings, Windows & Rooftops
       this.renderBuildings(ctx, city, view, timeSec);
+      this.renderVireoSign(ctx, city, view);
 
       // 6. Y-Sorted Entities & Street Props (Vehicles, Trees, Props, Player)
       this.renderYSortedEntities(ctx, city, player, view, timeSec);
@@ -524,6 +525,119 @@
           ctx.restore();
         }
       }
+    },
+
+    renderVireoSign: function(ctx, city, view) {
+      if (!city || !city.buildings) return;
+
+      var targetX = 1150;
+      var targetY = 540;
+      var target = null;
+      var nearest = Infinity;
+      for (var i = 0; i < city.buildings.length; i++) {
+        var building = city.buildings[i];
+        var centerX = building.x + building.w / 2;
+        var centerY = building.y + building.h / 2;
+        var dx = centerX - targetX;
+        var dy = centerY - targetY;
+        var distance = dx * dx + dy * dy;
+        if (distance < nearest) {
+          nearest = distance;
+          target = building;
+        }
+      }
+      if (!target) return;
+
+      var signW = 220;
+      var signH = 90;
+      var signX = target.x + target.w / 2;
+      var signY = target.y - signH / 2;
+      if (signX + signW / 2 < view.left || signX - signW / 2 > view.right ||
+          signY + signH / 2 < view.top || signY - signH / 2 > view.bottom) return;
+
+      ctx.save();
+      ctx.translate(signX, signY);
+
+      ctx.fillStyle = '#10141d';
+      ctx.shadowColor = 'rgba(0, 240, 255, 0.45)';
+      ctx.shadowBlur = 14;
+      VC.roundRect(ctx, -signW / 2, -signH / 2, signW, signH, 8);
+      ctx.fill();
+
+      ctx.shadowBlur = 8;
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 3;
+      VC.roundRect(ctx, -signW / 2, -signH / 2, signW, signH, 8);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#e8752a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-signW / 2 + 12, signH / 2 - 10);
+      ctx.lineTo(signW / 2 - 12, signH / 2 - 10);
+      ctx.stroke();
+
+      ctx.fillStyle = '#00e5ff';
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.moveTo(-8, -10);
+      ctx.bezierCurveTo(-34, -43, -82, -31, -96, -8);
+      ctx.bezierCurveTo(-68, -13, -44, -5, -18, 10);
+      ctx.bezierCurveTo(-34, 24, -74, 27, -92, 17);
+      ctx.bezierCurveTo(-58, 23, -28, 20, -8, 13);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffd27f';
+      ctx.shadowColor = '#e8752a';
+      ctx.beginPath();
+      ctx.moveTo(8, -10);
+      ctx.bezierCurveTo(34, -43, 82, -31, 96, -8);
+      ctx.bezierCurveTo(68, -13, 44, -5, 18, 10);
+      ctx.bezierCurveTo(34, 24, 74, 27, 92, 17);
+      ctx.bezierCurveTo(58, 23, 28, 20, 8, 13);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ffd27f';
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 17, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#10141d';
+      ctx.beginPath();
+      ctx.moveTo(-3, 2);
+      ctx.lineTo(0, -5);
+      ctx.lineTo(3, 2);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(14, 4);
+      ctx.lineTo(48, -1);
+      ctx.moveTo(-14, 4);
+      ctx.lineTo(-48, -1);
+      ctx.stroke();
+      ctx.fillStyle = '#10141d';
+      ctx.beginPath();
+      ctx.moveTo(34, 1);
+      ctx.lineTo(75, 5);
+      ctx.lineTo(38, 8);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#6ff6ff';
+      ctx.font = 'bold 15px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('VIREO CITY', 0, signH / 2 - 19);
+
+      ctx.restore();
     },
 
     renderYSortedEntities: function(ctx, city, player, view, timeSec) {

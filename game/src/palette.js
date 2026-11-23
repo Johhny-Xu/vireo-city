@@ -89,10 +89,10 @@
     ],
 
     // Player
-    playerJacket: '#1c2436',
-    playerJacketCollar: '#2d3b56',
-    playerPants: '#0e1219',
-    playerBoots: '#05070a',
+    playerJacket: '#e8752a',
+    playerJacketCollar: '#ffd27f',
+    playerPants: '#26303f',
+    playerBoots: '#141a24',
     playerSkin: '#e0a98b',
     playerHair: '#1a130e'
   };

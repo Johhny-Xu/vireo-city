@@ -175,7 +175,7 @@
         }
       }
       if (VC.police) {
-        var streetPoliceCruiser = new VC.Vehicle('interceptor', 650, 705, 0);
+        var streetPoliceCruiser = new VC.Vehicle('interceptor', 655, 688, 0.5);
         streetPoliceCruiser.speed = 0;
         streetPoliceCruiser.vx = 0;
         streetPoliceCruiser.vy = 0;
@@ -192,6 +192,8 @@
           heavy: false
         });
       }
+      if (VC.wanted) VC.wanted.setLevel(1, VC.player);
+      VC.player.wantedLevel = 1;
       if (VC.weather) VC.weather.forceState('HEAVY_RAIN');
 
     // ── drive ──────────────────────────────────────────────────────────────
