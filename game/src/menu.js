@@ -10,53 +10,49 @@
     hasSave: false,
 
     init: function() {
-      try {
-        this.hasSave = !!localStorage.getItem('vireo_city_save');
-      } catch (e) {
-        this.hasSave = false;
+      // Delegate to Save system if available, fall back to old key
+      if (VC.Save) {
+        this.hasSave = VC.Save.exists();
+      } else {
+        try {
+          this.hasSave = !!localStorage.getItem('vireo_city_save');
+        } catch (e) {
+          this.hasSave = false;
+        }
       }
     },
 
     saveGame: function(player) {
+      if (VC.Save) return VC.Save.save(player);
       if (!player) return false;
       try {
         var data = {
-          x: player.x,
-          y: player.y,
-          health: player.health,
-          armor: player.armor,
-          cash: player.cash,
-          wantedLevel: player.wantedLevel
+          x: player.x, y: player.y, health: player.health,
+          armor: player.armor, cash: player.cash, wantedLevel: player.wantedLevel
         };
         localStorage.setItem('vireo_city_save', JSON.stringify(data));
         this.hasSave = true;
         if (VC.hud) VC.hud.toast('GAME SAVED (F5)', 2.0);
         if (VC.Audio) VC.Audio.uiBlip(1100);
         return true;
-      } catch (e) {
-        return false;
-      }
+      } catch (e) { return false; }
     },
 
     loadGame: function(player) {
+      if (VC.Save) return VC.Save.load(player);
       if (!player) return false;
       try {
         var str = localStorage.getItem('vireo_city_save');
         if (!str) return false;
         var data = JSON.parse(str);
-        player.x = data.x;
-        player.y = data.y;
-        player.health = data.health;
-        player.armor = data.armor;
-        player.cash = data.cash;
-        player.wantedLevel = data.wantedLevel;
+        player.x = data.x; player.y = data.y;
+        player.health = data.health; player.armor = data.armor;
+        player.cash = data.cash; player.wantedLevel = data.wantedLevel;
         if (VC.camera) VC.camera.snapTo(player.x, player.y);
         if (VC.hud) VC.hud.toast('GAME LOADED (F9)', 2.0);
         if (VC.Audio) VC.Audio.uiBlip(1250);
         return true;
-      } catch (e) {
-        return false;
-      }
+      } catch (e) { return false; }
     },
 
     update: function(dt) {

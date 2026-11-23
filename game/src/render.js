@@ -36,7 +36,16 @@
       this.renderYSortedEntities(ctx, city, player, view, timeSec);
 
       // 7. Lighting Overlay (Sodium streetlights, car headlights, neon halos)
-      this.renderLightingOverlay(ctx, city, view, timeSec);
+      this.renderLightingOverlay(ctx, city, player, view, timeSec);
+
+      // 7b. Police siren light blobs (in world-space, additive)
+      if (VC.police) VC.police.renderSirenLights(ctx, timeSec);
+
+      // 7c. Weapon world effects (tracers, muzzle flash, shell casings, decals)
+      if (VC.Weapons) VC.Weapons.renderWorldEffects(ctx);
+
+      // 7d. Mission marker ring
+      if (VC.Missions) VC.Missions.renderWorldMarker(ctx, timeSec);
 
       // End Camera World Space
       camera.restoreTransform(ctx);
@@ -238,6 +247,21 @@
           // Row 2
           ctx.strokeRect(lx, pLot.y + pLot.h - 85, bayW, 50);
         }
+      }
+
+      // 6. Tire skid marks on road surfaces
+      if (VC.skidmarks && VC.skidmarks.length > 0) {
+        ctx.save();
+        for (var sk = 0; sk < VC.skidmarks.length; sk++) {
+          var sm = VC.skidmarks[sk];
+          ctx.strokeStyle = 'rgba(8, 12, 18, ' + sm.alpha + ')';
+          ctx.lineWidth = 3.5;
+          ctx.beginPath();
+          ctx.moveTo(sm.x1, sm.y1);
+          ctx.lineTo(sm.x2, sm.y2);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
     },
 
@@ -491,18 +515,62 @@
         }
       }
 
-      // 3. Parked Vehicles
+      // 3. Parked Vehicles (Static)
       for (var c = 0; c < city.parkedCars.length; c++) {
         var car = city.parkedCars[c];
+        if (player && player.vehicle === car) continue;
         if (car.x >= view.left - 50 && car.x <= view.right + 50 &&
             car.y >= view.top - 50 && car.y <= view.bottom + 50) {
           sortList.push({ type: 'car', item: car, sortY: car.y });
         }
       }
 
-      // 4. Player Entity
+      // 4. Civilian Traffic Vehicles (Dynamic)
+      if (VC.traffic && VC.traffic.getVisibleVehicles) {
+        var tvList = VC.traffic.getVisibleVehicles(view);
+        for (var tv = 0; tv < tvList.length; tv++) {
+          var tveh = tvList[tv];
+          if (player && player.vehicle === tveh) continue;
+          sortList.push({ type: 'dynamic_car', item: tveh, sortY: tveh.y });
+        }
+      }
+
+      // 5. Pedestrians (Dynamic)
+      if (VC.pedestrians && VC.pedestrians.getVisiblePedestrians) {
+        var pList = VC.pedestrians.getVisiblePedestrians(view);
+        for (var pi = 0; pi < pList.length; pi++) {
+          var ped = pList[pi];
+          sortList.push({ type: 'pedestrian', item: ped, sortY: ped.y });
+        }
+      }
+
+      // 5b. Police foot officers
+      if (VC.police) {
+        var foList = VC.police.footOfficers;
+        for (var foi = 0; foi < foList.length; foi++) {
+          var fo = foList[foi];
+          if (!fo.dead) sortList.push({ type: 'foot_officer', item: fo, sortY: fo.y });
+        }
+      }
+
+      // 5c. Police cruisers (dynamic vehicles)
+      if (VC.police) {
+        var crList = VC.police.cruisers;
+        for (var cri = 0; cri < crList.length; cri++) {
+          var crv = crList[cri].vehicle;
+          if (crv.driver !== VC.player) {
+            sortList.push({ type: 'dynamic_car', item: crv, sortY: crv.y });
+          }
+        }
+      }
+
+      // 6. Player Entity / Driven Vehicle
       if (player) {
-        sortList.push({ type: 'player', item: player, sortY: player.y });
+        if (player.vehicle) {
+          sortList.push({ type: 'dynamic_car', item: player.vehicle, sortY: player.vehicle.y });
+        } else {
+          sortList.push({ type: 'player', item: player, sortY: player.y });
+        }
       }
 
       // Sort ascending by Y coordinate so foreground occludes background
@@ -515,10 +583,16 @@
         var ent = sortList[k];
         if (ent.type === 'player') {
           ent.item.render(ctx);
+        } else if (ent.type === 'dynamic_car') {
+          ent.item.render(ctx, timeSec);
+        } else if (ent.type === 'pedestrian') {
+          ent.item.render(ctx);
         } else if (ent.type === 'car') {
           this.renderVehicle(ctx, ent.item);
         } else if (ent.type === 'tree') {
           this.renderPalmTree(ctx, ent.item);
+        } else if (ent.type === 'foot_officer') {
+          if (VC.police) VC.police.renderFootOfficers(ctx);
         } else if (ent.type === 'prop') {
           this.renderStreetProp(ctx, ent.item, timeSec);
         }
@@ -654,9 +728,11 @@
       }
     },
 
-    renderLightingOverlay: function(ctx, city, view, timeSec) {
+    renderLightingOverlay: function(ctx, city, player, view, timeSec) {
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
+
+      var curPlayer = player || VC.player;
 
       // 1. Streetlight sodium light pools (warm elliptical glow on pavement)
       var lights = city.streetlights;
@@ -682,7 +758,7 @@
         ctx.fill();
       }
 
-      // 2. Car headlights soft light cones
+      // 2. Car headlights soft light cones (Parked cars)
       var cars = city.parkedCars;
       for (var c = 0; c < cars.length; c++) {
         var car = cars[c];
@@ -711,7 +787,53 @@
         ctx.restore();
       }
 
-      // 3. Neon signs ambient radial halos
+      // 3. Active Dynamic Vehicle Headlights and Emergency Strobes
+      var dynCars = [];
+      if (curPlayer && curPlayer.vehicle) dynCars.push(curPlayer.vehicle);
+      if (VC.traffic && VC.traffic.vehicles) {
+        for (var tc = 0; tc < VC.traffic.vehicles.length; tc++) {
+          var tveh = VC.traffic.vehicles[tc].vehicle;
+          if (tveh !== (curPlayer ? curPlayer.vehicle : null)) {
+            dynCars.push(tveh);
+          }
+        }
+      }
+
+      for (var dv = 0; dv < dynCars.length; dv++) {
+        var dcar = dynCars[dv];
+        if (dcar.x < view.left - 140 || dcar.x > view.right + 140 ||
+            dcar.y < view.top - 140 || dcar.y > view.bottom + 140) continue;
+
+        if (dcar.lightsOn) {
+          ctx.save();
+          ctx.translate(dcar.x, dcar.y);
+          ctx.rotate(dcar.heading);
+
+          var dBeamGrad = ctx.createLinearGradient(dcar.w / 2, 0, dcar.w / 2 + 145, 0);
+          dBeamGrad.addColorStop(0, VC.PALETTE.headlightBeam);
+          dBeamGrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+          ctx.fillStyle = dBeamGrad;
+          ctx.beginPath();
+          ctx.moveTo(dcar.w / 2, -dcar.h / 2 + 3);
+          ctx.lineTo(dcar.w / 2 + 145, -55);
+          ctx.lineTo(dcar.w / 2 + 145, 60);
+          ctx.lineTo(dcar.w / 2, dcar.h / 2 - 3);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
+
+        // Interceptor Police Strobe ground glow
+        if (dcar.typeKey === 'interceptor' && dcar.sirenOn) {
+          var strobeCycle = Math.floor((dcar.sirenTimer || 0)) % 2 === 0;
+          var strobeColor = strobeCycle ? 'rgba(0, 229, 255, 0.45)' : 'rgba(255, 23, 68, 0.45)';
+          VC.drawRadialLight(ctx, dcar.x, dcar.y, 90, strobeColor, 'rgba(0,0,0,0)');
+        }
+      }
+
+      // 4. Neon signs ambient radial halos
       var signs = city.neonSigns;
       for (var s = 0; s < signs.length; s++) {
         var sign = signs[s];

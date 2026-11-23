@@ -35,6 +35,10 @@
     this.wantedLevel = 0;
     this.weapon = 'UNARMED';
 
+    // Vehicles & car jacking
+    this.vehicle = null;
+    this.nearVehicle = null;
+
     // Visual feedback
     this.hitFlashTimer = 0;
   }
@@ -87,9 +91,98 @@
       this.punchTimer = Math.max(0, this.punchTimer - dt);
     }
 
+    // A. Driving Mode (inside vehicle)
+    if (this.vehicle) {
+      var throttle = 0;
+      var steer = 0;
+      if (VC.Input) {
+        if (VC.Input.isDown('KeyW') || VC.Input.isDown('ArrowUp')) throttle += 1;
+        if (VC.Input.isDown('KeyS') || VC.Input.isDown('ArrowDown')) throttle -= 1;
+        if (VC.Input.isDown('KeyD') || VC.Input.isDown('ArrowRight')) steer += 1;
+        if (VC.Input.isDown('KeyA') || VC.Input.isDown('ArrowLeft')) steer -= 1;
+      }
+
+      var handbrake = VC.Input ? VC.Input.isDown('Space') : false;
+      var boost = VC.Input ? (VC.Input.isDown('ShiftLeft') || VC.Input.isDown('ShiftRight')) : false;
+
+      this.vehicle.applyControl(throttle, steer, handbrake, boost, dt);
+      this.vehicle.update(dt, city);
+
+      // Synchronize player with vehicle
+      this.x = this.vehicle.x;
+      this.y = this.vehicle.y;
+      this.vx = this.vehicle.vx;
+      this.vy = this.vehicle.vy;
+      this.facing = this.vehicle.heading;
+
+      // Engine sound
+      var speedRatio = Math.abs(this.vehicle.speed) / this.vehicle.maxSpeed;
+      if (VC.Audio) VC.Audio.setEngineHum(speedRatio);
+
+      // Dynamic camera zoom and lead while driving
+      if (VC.camera) {
+        VC.camera.zoom = 1.0 - speedRatio * 0.22;
+        VC.camera.leadDist = 130 + speedRatio * 85;
+      }
+
+      // Exit Vehicle on KeyF
+      if (VC.Input && VC.Input.justPressed('KeyF')) {
+        var v = this.vehicle;
+        var heading = v.heading;
+        var sideDist = v.h * 0.5 + 20;
+
+        // Try driver side (left side of vehicle heading)
+        var leftX = v.x + Math.sin(heading) * sideDist;
+        var leftY = v.y - Math.cos(heading) * sideDist;
+        var colLeft = city ? VC.City.checkCollision(city, leftX, leftY, this.radius) : { hit: false };
+
+        var exitX = leftX;
+        var exitY = leftY;
+        if (colLeft.hit) {
+          // Try passenger side (right side)
+          var rightX = v.x - Math.sin(heading) * sideDist;
+          var rightY = v.y + Math.cos(heading) * sideDist;
+          var colRight = city ? VC.City.checkCollision(city, rightX, rightY, this.radius) : { hit: false };
+          if (!colRight.hit) {
+            exitX = rightX;
+            exitY = rightY;
+          } else {
+            // Try rear
+            var rearX = v.x - Math.cos(heading) * (v.w * 0.5 + 22);
+            var rearY = v.y - Math.sin(heading) * (v.w * 0.5 + 22);
+            exitX = rearX;
+            exitY = rearY;
+          }
+        }
+
+        this.x = exitX;
+        this.y = exitY;
+        this.vx = 0;
+        this.vy = 0;
+        v.driver = null;
+        var vName = v.typeName;
+        this.vehicle = null;
+
+        if (VC.camera) {
+          VC.camera.zoom = 1.0;
+          VC.camera.leadDist = 70;
+        }
+        if (VC.Audio) VC.Audio.setEngineHum(0);
+        if (VC.hud) VC.hud.toast('EXITED ' + vName.toUpperCase(), 1.5);
+      }
+      return;
+    }
+
+    // B. On Foot Mode
+    if (VC.camera) {
+      VC.camera.zoom = 1.0;
+      VC.camera.leadDist = 70;
+    }
+    if (VC.Audio) VC.Audio.setEngineHum(0);
+
     // Process movement input
-    var move = VC.Input.getMovementVector();
-    this.isSprinting = VC.Input.isSprinting() && move.len > 0;
+    var move = VC.Input ? VC.Input.getMovementVector() : { x: 0, y: 0, len: 0 };
+    this.isSprinting = (VC.Input && VC.Input.isSprinting()) && move.len > 0;
     var targetSpeed = this.isSprinting ? this.sprintSpeed : this.walkSpeed;
 
     var targetVx = move.x * targetSpeed;
@@ -118,7 +211,7 @@
     }
 
     // Facing direction: prioritize aiming towards mouse pointer
-    if (VC.Input.mouse) {
+    if (VC.Input && VC.Input.mouse) {
       var dx = VC.Input.mouse.worldX - this.x;
       var dy = VC.Input.mouse.worldY - this.y;
       if (Math.hypot(dx, dy) > 15) {
@@ -136,7 +229,7 @@
     }
 
     // Punch / Action trigger
-    if (VC.Input.mouse && VC.Input.mouse.justPressed) {
+    if (VC.Input && VC.Input.mouse && VC.Input.mouse.justPressed) {
       if (this.weapon === 'UNARMED') {
         this.punchTimer = 0.22;
         this.punchHand = (this.punchHand + 1) % 2;
@@ -144,6 +237,82 @@
       } else {
         if (VC.Audio) VC.Audio.gunshot();
       }
+    }
+
+    // Check for nearby vehicles to take/steal
+    this.nearVehicle = null;
+    var closestVeh = null;
+    var closestDist = 65; // reach radius
+
+    // 1. Check traffic vehicles
+    if (VC.traffic && VC.traffic.vehicles) {
+      for (var t = 0; t < VC.traffic.vehicles.length; t++) {
+        var tv = VC.traffic.vehicles[t].vehicle;
+        var td = Math.hypot(tv.x - this.x, tv.y - this.y);
+        if (td < closestDist) {
+          closestDist = td;
+          closestVeh = tv;
+        }
+      }
+    }
+
+    // 2. Check parked cars in city
+    if (city && city.parkedCars) {
+      for (var p = 0; p < city.parkedCars.length; p++) {
+        var pc = city.parkedCars[p];
+        var pd = Math.hypot(pc.x - this.x, pc.y - this.y);
+        if (pd < closestDist) {
+          closestDist = pd;
+          closestVeh = pc;
+        }
+      }
+    }
+
+    this.nearVehicle = closestVeh;
+
+    // Handle car entering on KeyF
+    if (closestVeh && VC.Input && VC.Input.justPressed('KeyF')) {
+      if (closestVeh instanceof VC.Vehicle) {
+        this.vehicle = closestVeh;
+      } else {
+        // Convert static parked car object to dynamic Vehicle
+        var typeKey = closestVeh.typeKey || 'sable';
+        var newV = new VC.Vehicle(typeKey, closestVeh.x, closestVeh.y, closestVeh.angle || 0);
+        if (closestVeh.color) newV.color = closestVeh.color;
+        if (closestVeh.roofColor) newV.roofColor = closestVeh.roofColor;
+        if (closestVeh.glassColor) newV.glassColor = closestVeh.glassColor;
+
+        // Remove from city.parkedCars and remove corresponding collider
+        var pIdx = city.parkedCars.indexOf(closestVeh);
+        if (pIdx !== -1) {
+          city.parkedCars.splice(pIdx, 1);
+        }
+        for (var c = city.colliders.length - 1; c >= 0; c--) {
+          var col = city.colliders[c];
+          if (Math.hypot(col.x + col.w / 2 - closestVeh.x, col.y + col.h / 2 - closestVeh.y) < 25) {
+            city.colliders.splice(c, 1);
+            break;
+          }
+        }
+        this.vehicle = newV;
+      }
+
+      this.vehicle.driver = this;
+      this.nearVehicle = null;
+      if (VC.Audio) VC.Audio.uiBlip(320);
+      if (VC.hud) VC.hud.toast('TAKEN: ' + this.vehicle.typeName.toUpperCase(), 2.0);
+      // Trigger wanted crime and mission notification
+      if (VC.wanted) {
+        if (this.vehicle.typeKey === 'interceptor') {
+          VC.wanted.addCrime('killed_officer', this); // stealing police car = heavy crime
+        } else {
+          VC.wanted.addCrime('stole_car', this);
+        }
+      } else if (this.vehicle.typeKey === 'interceptor' && this.wantedLevel === 0) {
+        this.wantedLevel = 1;
+      }
+      if (VC.Missions) VC.Missions.registerVehicleJack(this.vehicle.typeKey);
+      return;
     }
 
     // Movement & Collision with smooth axis-sliding
@@ -172,6 +341,7 @@
   };
 
   Player.prototype.render = function(ctx) {
+    if (this.vehicle) return; // Inside vehicle, rendered as vehicle
     ctx.save();
     ctx.translate(this.x, this.y);
 

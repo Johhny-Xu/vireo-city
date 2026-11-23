@@ -26,6 +26,11 @@
     };
   }
 
+  Camera.prototype.init = function(width, height) {
+    this.viewWidth = width;
+    this.viewHeight = height;
+  };
+
   Camera.prototype.setBounds = function(minX, minY, maxX, maxY) {
     this.bounds.minX = minX;
     this.bounds.minY = minY;

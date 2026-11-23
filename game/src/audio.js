@@ -147,6 +147,24 @@
       } catch (e) {}
     },
 
+    punchSound: function() {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        var now = ctx.currentTime;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.12);
+      } catch (e) {}
+    },
+
     startSiren: function() {
       if (!this.enabled || sirenOsc) return;
       var ctx = getAudioContext();
