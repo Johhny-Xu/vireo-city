@@ -51,6 +51,7 @@
     var shotCamera = null;
     VC.coverSign = false;
     VC.hiddenSignText = null;
+    VC.dusk = false;
 
     var actualSeed = seed ? parseInt(seed, 10) : 1986;
     if (isNaN(actualSeed)) actualSeed = 1986;
@@ -403,6 +404,21 @@
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
       if (VC.weather) VC.weather.forceState('STORM');
       if (VC.PoliceAir) VC.PoliceAir.seedOverhead(chaseX, chaseY, 0);
+
+    // ── dusk (new) ──────────────────────────────────────────────────────────
+    } else if (shot === 'dusk') {
+      VC.dusk = true;
+      var duskX = 2385, duskY = 905;
+      basePlayingScene(duskX, duskY, 2400, 100, 40, 0);
+      VC.player.facing = -Math.PI * 0.5;
+      VC.camera.snapTo(2600, 870);
+      VC.camera.zoom = 1.62;
+      shotCamera = { zoom: 1.62, leadDist: 90 };
+      var duskCar = new VC.Vehicle('kestrel', 2330, 900, 0.05);
+      duskCar.speed = 0;
+      duskCar.lightsOn = true;
+      if (VC.weather) VC.weather.forceState('CLEAR');
+      gameTime = 5.2;
 
     // ── mission (new) ──────────────────────────────────────────────────────
     } else if (shot === 'mission') {
@@ -794,7 +810,7 @@
     }
 
     // Shot mode
-    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight'].indexOf(shot) !== -1) {
+    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight','dusk'].indexOf(shot) !== -1) {
       setupDeterministicShot(shot, seed);
       render();
       return;

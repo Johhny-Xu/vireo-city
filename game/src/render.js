@@ -12,8 +12,17 @@
       var view = camera.getVisibleBounds(120);
 
       // Clear logical screen
-      ctx.fillStyle = VC.PALETTE.skyVoid;
-      ctx.fillRect(0, 0, 1280, 800);
+      if (VC.dusk) {
+        var skyGrad = ctx.createLinearGradient(0, 0, 0, 800);
+        skyGrad.addColorStop(0, '#3a2340');
+        skyGrad.addColorStop(0.62, '#a85850');
+        skyGrad.addColorStop(1, '#ff9d5c');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, 1280, 800);
+      } else {
+        ctx.fillStyle = VC.PALETTE.skyVoid;
+        ctx.fillRect(0, 0, 1280, 800);
+      }
 
       // Begin Camera World Space
       ctx.save();
@@ -62,6 +71,25 @@
       camera.restoreTransform(ctx);
       ctx.restore();
 
+      if (VC.dusk) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'soft-light';
+        var warmGrade = ctx.createLinearGradient(0, 0, 1280, 800);
+        warmGrade.addColorStop(0, 'rgba(255, 186, 110, 0.85)');
+        warmGrade.addColorStop(1, 'rgba(255, 120, 70, 0.55)');
+        ctx.fillStyle = warmGrade;
+        ctx.fillRect(0, 0, 1280, 800);
+
+        ctx.globalCompositeOperation = 'lighter';
+        var sunHaze = ctx.createRadialGradient(1120, 280, 30, 1120, 280, 260);
+        sunHaze.addColorStop(0, 'rgba(255, 210, 140, 0.22)');
+        sunHaze.addColorStop(0.55, 'rgba(255, 150, 90, 0.10)');
+        sunHaze.addColorStop(1, 'rgba(255, 120, 70, 0)');
+        ctx.fillStyle = sunHaze;
+        ctx.fillRect(860, 20, 520, 520);
+        ctx.restore();
+      }
+
       // 8. Screen-Space Atmosphere: Rain mist, Teal Haze, Vignette
       this.renderScreenAtmosphere(ctx, timeSec);
       if (VC.weather) VC.weather.renderRainAndLightning(ctx);
@@ -74,10 +102,60 @@
 
       // Deep Ocean Abyss
       var oceanGrad = ctx.createLinearGradient(wf.x, 0, city.worldWidth, 0);
-      oceanGrad.addColorStop(0, VC.PALETTE.oceanMid);
-      oceanGrad.addColorStop(1, VC.PALETTE.oceanDeep);
+      if (VC.dusk) {
+        oceanGrad.addColorStop(0, '#ff9d5c');
+        oceanGrad.addColorStop(0.38, '#e0663a');
+        oceanGrad.addColorStop(1, '#3a1f38');
+      } else {
+        oceanGrad.addColorStop(0, VC.PALETTE.oceanMid);
+        oceanGrad.addColorStop(1, VC.PALETTE.oceanDeep);
+      }
       ctx.fillStyle = oceanGrad;
       ctx.fillRect(wf.x, 0, wf.width, city.worldHeight);
+
+      if (VC.dusk) {
+        ctx.save();
+
+        var sunOuter460 = ctx.createRadialGradient(2790, 690, 0, 2790, 690, 460);
+        sunOuter460.addColorStop(0, 'rgba(255, 122, 60, 0.10)');
+        sunOuter460.addColorStop(1, 'rgba(255, 122, 60, 0)');
+        ctx.fillStyle = sunOuter460;
+        ctx.beginPath();
+        ctx.arc(2790, 690, 460, 0, Math.PI * 2);
+        ctx.fill();
+
+        var sunOuter260 = ctx.createRadialGradient(2790, 690, 0, 2790, 690, 260);
+        sunOuter260.addColorStop(0, 'rgba(255, 154, 77, 0.22)');
+        sunOuter260.addColorStop(1, 'rgba(255, 154, 77, 0)');
+        ctx.fillStyle = sunOuter260;
+        ctx.beginPath();
+        ctx.arc(2790, 690, 260, 0, Math.PI * 2);
+        ctx.fill();
+
+        var sunDisk = ctx.createRadialGradient(2790, 690, 0, 2790, 690, 130);
+        sunDisk.addColorStop(0, '#fffdf2');
+        sunDisk.addColorStop(0.18, '#fffdf2');
+        sunDisk.addColorStop(0.45, '#ffd98a');
+        sunDisk.addColorStop(1, 'rgba(255, 154, 77, 0)');
+        ctx.fillStyle = sunDisk;
+        ctx.beginPath();
+        ctx.arc(2790, 690, 130, 0, Math.PI * 2);
+        ctx.fill();
+
+        var reflection = ctx.createLinearGradient(2790, 690, 2790, 1120);
+        reflection.addColorStop(0, 'rgba(255, 246, 180, 0.78)');
+        reflection.addColorStop(0.45, 'rgba(255, 196, 107, 0.48)');
+        reflection.addColorStop(1, 'rgba(255, 120, 70, 0)');
+        ctx.fillStyle = reflection;
+        ctx.beginPath();
+        ctx.moveTo(2767, 690);
+        ctx.lineTo(2813, 690);
+        ctx.lineTo(2860, 1120);
+        ctx.lineTo(2720, 1120);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Animated ocean swells & waves
       ctx.strokeStyle = 'rgba(30, 90, 130, 0.25)';
@@ -997,8 +1075,13 @@
       // 1. Subtle Teal Coastal Night Haze
       ctx.save();
       var hazeGrad = ctx.createLinearGradient(0, 0, 1280, 800);
-      hazeGrad.addColorStop(0, 'rgba(4, 18, 28, 0.16)');
-      hazeGrad.addColorStop(1, 'rgba(12, 6, 24, 0.14)');
+      if (VC.dusk) {
+        hazeGrad.addColorStop(0, 'rgba(255, 160, 95, 0.06)');
+        hazeGrad.addColorStop(1, 'rgba(86, 42, 72, 0.04)');
+      } else {
+        hazeGrad.addColorStop(0, 'rgba(4, 18, 28, 0.16)');
+        hazeGrad.addColorStop(1, 'rgba(12, 6, 24, 0.14)');
+      }
       ctx.fillStyle = hazeGrad;
       ctx.fillRect(0, 0, 1280, 800);
 
@@ -1016,19 +1099,28 @@
       }
 
       // Cold-blue color grade plus a thin warm edge keeps neon and sirens separated.
-      ctx.fillStyle = 'rgba(18, 42, 70, 0.10)';
-      ctx.fillRect(0, 0, 1280, 800);
-      var edge = ctx.createRadialGradient(640, 400, 300, 640, 400, 720);
-      edge.addColorStop(0, 'rgba(0,0,0,0)');
-      edge.addColorStop(0.72, 'rgba(4,12,22,0.10)');
-      edge.addColorStop(1, 'rgba(72,92,120,0.24)');
-      ctx.fillStyle = edge;
-      ctx.fillRect(0, 0, 1280, 800);
+      if (VC.dusk) {
+        ctx.fillStyle = 'rgba(255, 140, 80, 0.025)';
+        ctx.fillRect(0, 0, 1280, 800);
+      } else {
+        ctx.fillStyle = 'rgba(18, 42, 70, 0.10)';
+        ctx.fillRect(0, 0, 1280, 800);
+        var edge = ctx.createRadialGradient(640, 400, 300, 640, 400, 720);
+        edge.addColorStop(0, 'rgba(0,0,0,0)');
+        edge.addColorStop(0.72, 'rgba(4,12,22,0.10)');
+        edge.addColorStop(1, 'rgba(72,92,120,0.24)');
+        ctx.fillStyle = edge;
+        ctx.fillRect(0, 0, 1280, 800);
+      }
 
       // 3. Cinematic Vignette around screen borders
       var vigGrad = ctx.createRadialGradient(640, 400, 380, 640, 400, 780);
       vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vigGrad.addColorStop(1, 'rgba(2, 4, 10, 0.82)');
+      if (VC.dusk) {
+        vigGrad.addColorStop(1, 'rgba(2, 4, 10, 0.35)');
+      } else {
+        vigGrad.addColorStop(1, 'rgba(2, 4, 10, 0.82)');
+      }
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, 1280, 800);
 
