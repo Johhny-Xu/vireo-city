@@ -1,6 +1,7 @@
 // Wanted level system (0-5 stars) with crime tracking and police sight decay
 (function() {
   'use strict';
+  // Wanted comment: decay and search-circle state stay deterministic and explain every rise or fall in the HUD.
 
   var VC = window.VC = window.VC || {};
 
@@ -28,6 +29,8 @@
   var decayTimer    = 0;    // countdown to drop one star
   var isLosing      = false; // true when sightTimer > threshold
   var crimeCooldowns = {};
+  var searchX = 0, searchY = 0, searchTimer = 0;
+  // Wanted comment: a retained search ring prevents police from locking directly onto the hidden player.
 
   var Wanted = {
     get level() { return level; },
@@ -87,7 +90,7 @@
       spotFeedbackTimer = 0.9;
       if (VC.combat && VC.combat.triggerPoliceSpot) VC.combat.triggerPoliceSpot();
       if (spotBannerCooldown <= 0 && VC.hud) {
-        VC.hud.toast('警察看到了你 // 藏匿衰减已重置', 1.6);
+        VC.hud.toast('SPOTTED BY POLICE // CONCEALMENT RESET', 1.6);
         spotBannerCooldown = 2.5;
       }
       if (VC.Audio) VC.Audio.startSiren();
@@ -108,6 +111,19 @@
       if (VC.police) VC.police.onWantedLevelChange(level);
     },
 
+    getSearchPoint: function(player) {
+      if (!player) return null;
+      if (searchTimer <= 0) {
+        var rng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('wanted-search') : null;
+        var angle = rng ? rng.random() * Math.PI * 2 : 0;
+        var radius = rng ? 180 + rng.random() * 260 : 220;
+        searchX = player.x + Math.cos(angle) * radius;
+        searchY = player.y + Math.sin(angle) * radius;
+        searchTimer = 8;
+      }
+      return { x: searchX, y: searchY };
+    },
+
     isDecaying: function() { return isLosing; },
 
     decayFraction: function() {
@@ -122,6 +138,7 @@
     },
 
     update: function(dt) {
+      searchTimer = Math.max(0, searchTimer - dt);
       // Tick cooldowns
       var keys = Object.keys(crimeCooldowns);
       for (var k = 0; k < keys.length; k++) {

@@ -4,9 +4,10 @@
 
   var VC = window.VC = window.VC || {};
 
-  var MINIMAP_RADIUS = 76;
-  var MINIMAP_CENTER_X = 1170;
-  var MINIMAP_CENTER_Y = 685;
+  // A 202px-long radar remains legible after the 1280x800 review frame is scaled down.
+  var MINIMAP_RADIUS = 101;
+  var MINIMAP_CENTER_X = 1144;
+  var MINIMAP_CENTER_Y = 660;
   var WORLD_RANGE = 420; // world units radius shown in minimap
 
   function drawRotatedArrow(ctx, x, y, angle, size, color) {
@@ -27,6 +28,27 @@
     ctx.fill();
 
     ctx.restore();
+  }
+
+  // City-generated weapon crates stay visible on radar until taken.
+  if (VC.city && VC.city.interactables) {
+    for (var wi = 0; wi < VC.city.interactables.length; wi++) {
+      var witem = VC.city.interactables[wi];
+      if (witem.type !== 'weapon_box') continue;
+      var wmx = cx + (witem.x - focusX) * scale;
+      var wmy = cy + (witem.y - focusY) * scale;
+      if (Math.hypot(wmx - cx, wmy - cy) < r - 5) {
+        ctx.save();
+        ctx.fillStyle = '#ff9d2e';
+        ctx.shadowColor = '#ff9d2e';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(wmx - 4, wmy - 4, 8, 8);
+        ctx.strokeStyle = '#fff1d0';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(wmx - 4, wmy - 4, 8, 8);
+        ctx.restore();
+      }
+    }
   }
 
   var Minimap = {
@@ -143,9 +165,16 @@
               // Police cruiser: flashing red/blue blip
               var strobe = Math.sin((gameTime || 0) * 12) > 0;
               ctx.fillStyle = strobe ? '#ff1744' : '#00e5ff';
+              ctx.save();
+              ctx.translate(tvx, tvy);
+              ctx.rotate(tv.heading);
               ctx.beginPath();
-              ctx.arc(tvx, tvy, 3.5, 0, Math.PI * 2);
+              ctx.moveTo(7, 0);
+              ctx.lineTo(-5, -5);
+              ctx.lineTo(-5, 5);
+              ctx.closePath();
               ctx.fill();
+              ctx.restore();
             } else {
               // Civilian traffic: amber / cyan blip
               ctx.fillStyle = tv.typeKey === 'cab' ? '#ffd700' : '#00e5ff';
@@ -161,16 +190,13 @@
         var ahy = cy + (VC.PoliceAir.y - focusY) * scale;
         if (Math.hypot(ahx - cx, ahy - cy) < r - 4) {
           ctx.save();
-          ctx.fillStyle = '#ff2244';
-          ctx.shadowColor = '#ff2244';
-          ctx.shadowBlur = 10;
+          ctx.strokeStyle = '#55aaff';
+          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.moveTo(ahx, ahy - 7);
-          ctx.lineTo(ahx + 7, ahy + 6);
-          ctx.lineTo(ahx - 7, ahy + 6);
-          ctx.closePath();
-          ctx.fill();
-          ctx.shadowBlur = 0;
+          ctx.arc(ahx, ahy, 8, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
           ctx.fillStyle = '#e8f5ff';
           ctx.font = 'bold 7px monospace';
           ctx.textAlign = 'center';
@@ -183,11 +209,23 @@
       // Draw Mission Marker (pulsing gold/orange diamond)
       var missionX = 1420;
       var missionY = 705;
+      if (VC.Missions) {
+        var missionObjective = VC.Missions.getObjective();
+        if (missionObjective && missionObjective.x !== undefined) {
+          missionX = missionObjective.x;
+          missionY = missionObjective.y;
+        }
+      }
       var mdx = cx + (missionX - focusX) * scale;
       var mdy = cy + (missionY - focusY) * scale;
       if (Math.hypot(mdx - cx, mdy - cy) < r - 6) {
         var mPulse = 3.5 + Math.sin((gameTime || 0) * 6) * 1.5;
         ctx.save();
+        ctx.strokeStyle = 'rgba(255,196,0,0.24)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(mdx, mdy, mPulse + 7, 0, Math.PI * 2);
+        ctx.stroke();
         ctx.fillStyle = '#ffaa00';
         ctx.shadowColor = '#ffaa00';
         ctx.shadowBlur = 8;
@@ -231,7 +269,27 @@
 
       // Draw Player Arrow in Center
       var playerAngle = player.vehicle ? player.vehicle.heading : player.facing;
-      drawRotatedArrow(ctx, cx, cy, playerAngle, 7, '#ffeb3b');
+      if (VC.PoliceAir && VC.PoliceAir.spotted) {
+        ctx.save();
+        ctx.globalAlpha = 0.55 + 0.45 * (Math.sin((gameTime || 0) * 14) > 0 ? 1 : 0.2);
+        drawRotatedArrow(ctx, cx, cy, playerAngle, 11, '#ff1744');
+        ctx.restore();
+      }
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.2;
+      ctx.fillStyle = '#ffeb3b';
+      ctx.translate(cx, cy);
+      ctx.rotate(playerAngle);
+      ctx.beginPath();
+      ctx.moveTo(13, 0);
+      ctx.lineTo(-8, -9);
+      ctx.lineTo(-4, 0);
+      ctx.lineTo(-8, 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
 
       ctx.restore(); // restore clip
 

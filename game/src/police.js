@@ -27,6 +27,8 @@
   var spawnTimer = 0;
   var footSpawnTimer = 0;
   var active = false;
+  var policeSpawnIndex = 0;
+  // Police comment: cruisers, motorcycles, and rangers now have distinct pursuit roles and braking behavior.
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   function wantedLevel() {
@@ -45,7 +47,9 @@
     sy = Math.max(50, Math.min(VC.city.worldHeight - 50, sy));
 
     var heavy = wantedLevel() >= 6;
-    var v = new VC.Vehicle(heavy ? 'ranger' : 'interceptor', sx, sy, angle);
+    var policeType = heavy ? 'ranger' : (wantedLevel() >= 3 && policeSpawnIndex % 4 === 0 ? 'motorcycle' : 'interceptor');
+    policeSpawnIndex++;
+    var v = new VC.Vehicle(policeType, sx, sy, angle);
     v.speed = 0;
     v.lightsOn = true;
     // Mark this as a police car (affects wanted crime if rammed)
@@ -122,7 +126,8 @@
     while (angleDiff >  Math.PI) angleDiff -= Math.PI * 2;
     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
-    var turn = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), v.type.turnSpeed * dt);
+    // Vehicle keeps its tuning on the instance (this.turnSpeed), not under a .type bag.
+    var turn = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), v.turnSpeed * dt);
     v.heading += turn;
 
     var wanted = VC.wanted ? VC.wanted.level : 0;
@@ -130,6 +135,8 @@
     // Slow down when close
     var dist = Math.hypot(dx, dy);
     if (dist < 80) targetSpeed *= 0.5;
+    if (v.typeKey === 'motorcycle') targetSpeed *= 1.12;
+    if (cruiserEntry.heavy) targetSpeed *= 0.82;
 
     v.speed += (targetSpeed - v.speed) * Math.min(1, dt * 2.5);
     v.vx = Math.cos(v.heading) * v.speed;
@@ -143,6 +150,22 @@
     cruisers: cruisers,
     footOfficers: footOfficers,
     roadblocks: roadblocks,
+
+    // Deterministic scene helper; gives shot/firefight modes visible dismounted units.
+    seedFootOfficers: function(num, player) {
+      footOfficers.length = 0;
+      for (var i = 0; i < num; i++) {
+        footOfficers.push({
+          x: player.x + (i === 0 ? 150 : -170),
+          y: player.y + (i === 0 ? -70 : 90),
+          vx: 0, vy: 0,
+          shootTimer: 0.3 + i * 0.25,
+          dead: false, health: 55,
+          sideCover: i % 2 ? 1 : -1,
+          aimAngle: 0
+        });
+      }
+    },
 
     onWantedLevelChange: function(level) {
       active = level > 0;
@@ -196,7 +219,7 @@
             player.vehicle.speed *= impact > 180 ? -0.18 : -0.28;
             if (impact > 75) player.vehicle.damage(Math.round(Math.min(42, impact * 0.28)));
             if (VC.combat) VC.combat.applyDamage(player, impact > 220 ? 16 : 8, block.x, block.y);
-            if (VC.hud) VC.hud.toast('路障撞击 // VEHICLE DAMAGED', 1.2);
+            if (VC.hud) VC.hud.toast('ROADBLOCK IMPACT // VEHICLE DAMAGED', 1.2);
             player.vehicle.x += (player.vehicle.x - block.x) * 0.12;
             player.vehicle.y += (player.vehicle.y - block.y) * 0.12;
           }
@@ -242,6 +265,8 @@
         // Police see the player → reset decay
         var concealed = VC.wanted ? VC.wanted.isPlayerConcealed(player, VC.city) : false;
         if (dToPl < SIGHT_RANGE && !concealed && VC.wanted) VC.wanted.registerPoliceSpot();
+        if (concealed) c.state = 'search';
+        else c.state = 'chase';
 
         // ── Chase / ram ──
         if (!c.disabled) {
@@ -265,6 +290,9 @@
               VC.combat.applyDamage(player, 8 + Math.random() * 6, v.x, v.y);
             } else {
               player.damage(8);
+            }
+            if (VC.Weapons) {
+              VC.Weapons.spawnImpactTracer(v.x, v.y, player.x, player.y, 'vireo9');
             }
             if (VC.Audio) VC.Audio.gunshot();
           }
@@ -350,6 +378,9 @@
             } else {
               player.damage(10);
             }
+            if (VC.Weapons) {
+              VC.Weapons.spawnImpactTracer(fo.x, fo.y, player.x, player.y, 'vireo9');
+            }
             if (VC.Audio) VC.Audio.gunshot();
           }
         }
@@ -383,6 +414,22 @@
           ctx.arc(v.x, v.y, 90, 0, Math.PI * 2);
           ctx.fill();
         }
+        ctx.save();
+        ctx.translate(v.x, v.y);
+        ctx.rotate(v.heading);
+        ctx.globalCompositeOperation = 'lighter';
+        var head = ctx.createLinearGradient(18, 0, 112, 0);
+        head.addColorStop(0, 'rgba(255,248,205,0.28)');
+        head.addColorStop(1, 'rgba(255,248,205,0)');
+        ctx.fillStyle = head;
+        ctx.beginPath();
+        ctx.moveTo(18, -7);
+        ctx.lineTo(112, -25);
+        ctx.lineTo(112, 25);
+        ctx.lineTo(18, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
     },
 
@@ -429,15 +476,27 @@
         if (fo.dead) continue;
         ctx.save();
         ctx.translate(fo.x, fo.y);
+        ctx.rotate(fo.aimAngle || 0);
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.beginPath();
-        ctx.ellipse(0, 3, 12, 8, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 3, 13, 9, 0, 0, Math.PI * 2);
         ctx.fill();
+        ctx.strokeStyle = '#ff2aa1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.stroke();
         // Body (dark blue uniform)
-        ctx.fillStyle = '#1a2c4a';
+        ctx.fillStyle = '#2a1732';
         VC.roundRect(ctx, -9, -10, 18, 20, 5);
         ctx.fill();
+        ctx.fillStyle = '#ff2aa1';
+        ctx.fillRect(-8, -7, 16, 4);
+        ctx.fillStyle = '#ef3f7b';
+        ctx.fillRect(-11, -22, 22, 3);
+        ctx.fillStyle = '#43df6b';
+        ctx.fillRect(-11, -22, 22 * Math.max(0.25, fo.health / 55), 3);
         // Vest / badge stripe
         ctx.fillStyle = '#d4aa00';
         ctx.fillRect(-6, -4, 12, 3);
@@ -449,14 +508,31 @@
         // Cap
         ctx.fillStyle = '#121e30';
         ctx.fillRect(-7, -18, 14, 6);
+        ctx.fillStyle = '#ff2aa1';
+        ctx.fillRect(-5, -20, 10, 2);
+        ctx.fillStyle = '#ff1744';
+        ctx.globalAlpha = fo.shootTimer < 0.25 ? 1 : 0.35;
         // Heavy-unit rifle, aimed toward the player's current position
         var aim = fo.shootTimer < 0.25 ? '#ffb300' : '#697b8f';
         ctx.save();
         ctx.rotate(fo.aimAngle || 0);
         ctx.fillStyle = '#11151c';
         ctx.fillRect(4, -2, 22, 4);
+        ctx.globalAlpha = fo.shootTimer < 0.25 ? 1 : 0.75;
         ctx.fillStyle = aim;
         ctx.fillRect(20, -1, 8, 2);
+        if (fo.shootTimer < 0.25) {
+          ctx.fillStyle = '#fff1a6';
+          ctx.shadowColor = '#ff1744';
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.moveTo(28, 0);
+          ctx.lineTo(38, -5);
+          ctx.lineTo(35, 1);
+          ctx.lineTo(40, 6);
+          ctx.closePath();
+          ctx.fill();
+        }
         ctx.restore();
         ctx.restore();
       }

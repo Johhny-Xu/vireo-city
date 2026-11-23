@@ -46,6 +46,7 @@
       neonSigns: [],
       parkedCars: [],
       props: [],
+      interactables: [],
       trees: [],
       tunnels: [
         { x: 740, y: 2 * STEP + ROAD_WIDTH - 54, w: 270, h: 54, name: 'VICE UNDERPASS' },
@@ -200,6 +201,42 @@
 
     // 4. Populate Road Details & Parked Cars along Curbs
     generateRoadsideProps(city, rng);
+
+    // 5. Publish deterministic sidewalk interactables for weapons and missions.
+    // This is why weapon/mission coordinates should never be embedded in gameplay modules.
+    // Sidewalk crates stay outside buildings and follow the same curb geometry as roadside props.
+    var scatterBlock = city.blocks[12];
+    city.interactables.push({
+      type: 'weapon_box', id: 'scatter12',
+      label: 'SCATTER 12 CRATE',
+      x: scatterBlock.x + scatterBlock.w * 0.5,
+      y: scatterBlock.y - SIDEWALK_WIDTH - 14,
+      weapon: 'scatter12'
+    });
+    var sniperBlock = city.blocks[38];
+    city.interactables.push({
+      type: 'weapon_box', id: 'longshot',
+      label: 'LONGSHOT CRATE',
+      x: sniperBlock.x + sniperBlock.w * 0.5,
+      y: sniperBlock.y + sniperBlock.h + SIDEWALK_WIDTH + 14,
+      weapon: 'longshot'
+    });
+    city.interactables.push({
+      type: 'mission', id: 'dock_contact', label: 'MIRA // DOCK CONTACT',
+      x: 760, y: (1 * STEP + ROAD_WIDTH) - SIDEWALK_WIDTH - 14
+    });
+
+    // Add recognizable neon sign poles and curb furniture as deterministic street detail.
+    for (var si = 0; si < city.blocks.length; si++) {
+      var sb = city.blocks[si];
+      if (sb.type !== 'building') continue;
+      city.props.push({
+        type: 'neon_pole',
+        x: sb.x + 8,
+        y: sb.y + sb.h - 8,
+        color: si % 2 ? '#00f0ff' : '#ff007f'
+      });
+    }
 
     return city;
   }

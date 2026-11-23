@@ -49,6 +49,29 @@
   };
 
   // Default global RNG instance
-  VC.RNG = new Mulberry32(1986);
+  // Named streams keep subsystem sequences independent while remaining seed-reproducible.
+  var streams = {};
+  var baseSeed = 1986;
+  function hashName(name) {
+    var h = 2166136261;
+    var text = String(name || 'global');
+    for (var i = 0; i < text.length; i++) {
+      h ^= text.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h ^ baseSeed ^ Math.imul(baseSeed, 31)) >>> 0;
+  }
+  function setBaseSeed(seed) {
+    baseSeed = (seed >>> 0) || 1986;
+    streams = {};
+    VC.RNG.seed(baseSeed);
+  }
+  VC.RNG = new Mulberry32(baseSeed);
+  VC.RNG.stream = function(name) {
+    var key = String(name || 'default');
+    if (!streams[key]) streams[key] = new Mulberry32(hashName(key));
+    return streams[key];
+  };
+  VC.RNG.setSeed = setBaseSeed;
   VC.Mulberry32 = Mulberry32;
 })();

@@ -1,6 +1,7 @@
-// Mission chain (6 original missions) for Vireo City
+// Mission chain (8 original missions) for Vireo City
 (function() {
   'use strict';
+  // Mission comment: explicit prerequisite state and radio aftermath make the late chain causally continuous.
 
   var VC = window.VC = window.VC || {};
 
@@ -77,6 +78,31 @@
         { type: 'lose_wanted', label: 'Escape with wanted level 0' },
         { type: 'deliver', label: 'Deliver to the buyer at Coral Pier',  x: 2300, y: 850, radius: 65 }
       ]
+    },
+    {
+      id: 'ghost_convoy',
+      title: 'Ghost Convoy',
+      briefing: '"The Long Goodbye was a lie. VPD found the buyer and Lena is being moved. Get to Meridian, and keep the convoy on the road." — LENA',
+      reward: 10500,
+      markerX: 500, markerY: 580,
+      objectives: [
+        { type: 'goto', label: 'Meet Lena at the Meridian underpass', x: 500, y: 580, radius: 55 },
+        { type: 'survive_chase', label: 'Escort Lena through the pursuit — survive 45 seconds', seconds: 45, done: 0 },
+        { type: 'deliver', label: 'Lose the tail and reach the canal safehouse', x: 850, y: 300, radius: 55 }
+      ]
+    },
+    {
+      id: 'black_sun',
+      title: 'Black Sun',
+      briefing: '"Chief, Dex sold both crews to VPD. Mira has the vault key. We finish this before sunrise — all of Vireo is watching." — MIRA',
+      reward: 18000,
+      markerX: 1200, markerY: 900,
+      objectives: [
+        { type: 'goto', label: 'Infiltrate the Black Sun server vault', x: 1200, y: 900, radius: 60 },
+        { type: 'takeout', label: 'Clear 5 VPD tactical units', count: 5, done: 0 },
+        { type: 'goto', label: 'Secure Mira at the roof extraction', x: 980, y: 220, radius: 55 },
+        { type: 'deliver', label: 'Escape Vireo with the Black Sun archive', x: 2300, y: 850, radius: 65 }
+      ]
     }
   ];
 
@@ -90,7 +116,8 @@
     dialog: null,          // { title, text, timer } while briefing dialog is open
     banner: null,          // { title, reward, timer } mission-complete banner
     takeoutCount: 0,       // tracks kills for 'takeout' objectives
-    hasVehicleType: false   // tracks steal_vehicle objective
+    hasVehicleType: false,  // tracks steal_vehicle objective
+    chaseSeconds: 0
   };
 
   // ── Helper: active mission def ─────────────────────────────────────────────
@@ -116,11 +143,16 @@
     startCurrent: function() {
       var m = getMission();
       if (!m) return;
+      if (m.id === 'black_sun' && (!state.completedIds || !state.completedIds.ghost_convoy)) {
+        state.currentIndex = 6;
+        m = getMission();
+      }
       state.active = true;
       state.objectiveIndex = 0;
       state.objectiveDone = m.objectives.map(function() { return false; });
       state.takeoutCount = 0;
       state.hasVehicleType = false;
+      state.chaseSeconds = 0;
       state.dialog = { title: m.title, text: m.briefing, timer: 6.5 };
       if (VC.Audio) VC.Audio.uiBlip(700);
     },
@@ -135,6 +167,7 @@
       if (!m) return;
       state.objectiveDone[state.objectiveIndex] = true;
       state.objectiveIndex++;
+      if (VC.hud) VC.hud.setObjectiveProgress('');
       if (state.objectiveIndex >= m.objectives.length) {
         this.completeMission();
       } else {
@@ -151,9 +184,22 @@
       if (VC.player) VC.player.addCash(m.reward);
       if (VC.Audio) VC.Audio.uiBlip(1400);
       if (VC.hud) VC.hud.toast('MISSION COMPLETE — +$' + m.reward, 4.0);
-      // Advance to next mission
-      state.currentIndex = Math.min(state.currentIndex + 1, MISSION_LIST.length - 1);
+      // Advance and enforce the Ghost Convoy -> Black Sun prerequisite chain.
+      if (m.id === 'ghost_convoy') {
+        state.currentIndex = 7;
+      } else {
+        state.currentIndex = Math.min(state.currentIndex + 1, MISSION_LIST.length - 1);
+      }
       state.objectiveIndex = 0;
+      state.completedIds = state.completedIds || {};
+      state.completedIds[m.id] = true;
+    },
+
+    interrupt: function(reason) {
+      if (!state.active) return;
+      state.active = false;
+      state.chaseSeconds = 0;
+      if (VC.hud) VC.hud.toast('MISSION INTERRUPTED // ' + (reason || 'OBJECTIVE LOST'), 3.0);
     },
 
     // Called when player kills an enemy (foot officer / rival)
@@ -191,6 +237,10 @@
       }
 
       if (!state.active || !player) return;
+      if (player.health <= 0) {
+        this.interrupt('PLAYER DOWN');
+        return;
+      }
 
       var obj = getObjective();
       if (!obj) return;
@@ -215,6 +265,14 @@
       // ── steal_vehicle — handled by registerVehicleJack ───────────────────
 
       // ── takeout — handled by registerKill ────────────────────────────────
+      if (obj.type === 'survive_chase') {
+        state.chaseSeconds += dt;
+        var secsLeft = Math.max(0, Math.ceil(obj.seconds - state.chaseSeconds));
+        if (VC.hud) VC.hud.setObjectiveProgress('ESCORT ' + secsLeft + 's');
+        if (state.chaseSeconds >= obj.seconds) {
+          this.advanceObjective();
+        }
+      }
     },
 
     // Render mission marker ring in world-space

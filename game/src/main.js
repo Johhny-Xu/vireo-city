@@ -39,6 +39,7 @@
     VC.player.health = health || 100;
     VC.player.armor  = armor  || 0;
     VC.player.wantedLevel = wanted || 0;
+    if (VC.hud && VC.hud.setCashImmediate) VC.hud.setCashImmediate(cash);
     if (VC.wanted) VC.wanted.setLevel(wanted || 0, VC.player);
     if (VC.traffic)     VC.traffic.initDeterministic(VC.city, VC.player);
     if (VC.pedestrians) VC.pedestrians.initDeterministic(VC.city, VC.player);
@@ -53,6 +54,8 @@
 
     VC.RNG = new VC.Mulberry32(actualSeed);
     VC.city = VC.City.generate(actualSeed);
+    if (VC.RNG.setSeed) VC.RNG.setSeed(actualSeed);
+    if (VC.Weapons) VC.Weapons.syncCityBoxes(VC.city);
     VC.camera.setBounds(0, 0, VC.city.worldWidth, VC.city.worldHeight);
 
     // ── title ──────────────────────────────────────────────────────────────
@@ -63,11 +66,49 @@
       VC.camera.snapTo(1100, 1100);
       gameTime = 1.8;
       if (VC.weather) VC.weather.forceState('LIGHT_RAIN');
+    } else if (shot === 'firefight') {
+      var fightX = 900, fightY = 705;
+      basePlayingScene(fightX, fightY, 5900, 82, 35, 2);
+      VC.player.facing = -Math.PI * 0.72;
+      VC.camera.snapTo(fightX, fightY);
+      VC.camera.zoom = 1.40;
+      VC.Input.mouse.screenX = 880;
+      VC.Input.mouse.screenY = 300;
+      gameTime = 6.4;
+      if (VC.Weapons) VC.Weapons.equip('scatter12');
+      if (VC.police) {
+        VC.police.seedState(1, VC.player);
+        VC.police.seedFootOfficers(3, VC.player);
+        var fightOfficers = VC.police.footOfficers;
+        if (fightOfficers.length) {
+          fightOfficers[0].x = fightX + 138; fightOfficers[0].y = fightY - 82;
+          fightOfficers[1].x = fightX + 178; fightOfficers[1].y = fightY + 38;
+          fightOfficers[2].x = fightX - 155; fightOfficers[2].y = fightY - 118;
+          for (var oi = 0; oi < fightOfficers.length; oi++) {
+            fightOfficers[oi].shootTimer = 0.08 + oi * 0.12;
+            fightOfficers[oi].enemyColor = '#ff2aa1';
+          }
+        }
+      }
+      if (VC.Weapons) {
+        VC.Weapons.muzzleFlashes.push({ x: fightX + 30, y: fightY - 18, angle: 0.2, life: 0.22, maxLife: 0.22 });
+        VC.Weapons.spawnImpactTracer(fightX + 30, fightY - 18, fightX + 155, fightY - 92, 'scatter12');
+        VC.Weapons.spawnImpactTracer(fightX + 138, fightY - 82, fightX + 34, fightY - 22, 'vireo9');
+        VC.Weapons.spawnImpactTracer(fightX + 178, fightY + 38, fightX + 42, fightY - 12, 'vireo9');
+        VC.Weapons.spawnImpactTracer(fightX - 155, fightY - 118, fightX + 26, fightY - 24, 'vireo9');
+        VC.Weapons.bulletDecals.push({ x: fightX + 155, y: fightY - 92, alpha: 0.9, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX - 24, y: fightY + 18, alpha: 0.8, life: 18 });
+        VC.Weapons.bulletDecals.push({ x: fightX + 82, y: fightY - 28, alpha: 0.75, life: 18 });
+        VC.Weapons.spawnShellCasing(fightX + 28, fightY - 14, 0.2);
+      }
+      if (VC.hud) VC.hud.toast('RECTO RUNNERS ENGAGED // COMBAT ZONE', 4.0);
+      // Firefight comment: fixed enemy spacing and weapon ammo make shot=firefight repeatable.
+      if (VC.weather) VC.weather.forceState('LIGHT_RAIN');
 
     // ── street ─────────────────────────────────────────────────────────────
     } else if (shot === 'street' || shot === 'play') {
       var spawnX = 740, spawnY = 705;
-      basePlayingScene(spawnX, spawnY, 250, 100, 50, 0);
+      basePlayingScene(spawnX, spawnY, 3400, 100, 50, 0);
       VC.player.facing = -Math.PI * 0.25;
 
       var nearCab = new VC.Vehicle('cab', 785, 723.5, 0);
@@ -76,8 +117,24 @@
       if (VC.traffic) VC.traffic.vehicles.push({ vehicle: nearCab });
 
       VC.camera.snapTo(spawnX, spawnY);
+      VC.camera.zoom = 1.45;
       VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
       gameTime = 3.5;
+      if (VC.pedestrians) {
+        VC.pedestrians.MAX_PEDESTRIANS = 16;
+        VC.pedestrians.initDeterministic(VC.city, VC.player);
+        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(16, VC.player);
+        // Add deterministic umbrella/flee offsets to the existing crowd.
+        for (var pi = 0; pi < VC.pedestrians.pedestrians.length; pi++) {
+          var existingPed = VC.pedestrians.pedestrians[pi];
+          existingPed.hasUmbrella = true;
+          if (pi % 3 === 0) {
+            existingPed.state = 'fleeing';
+            existingPed.stateTimer = 2.5;
+            existingPed.heading = pi % 2 ? Math.PI : 0;
+          }
+        }
+      }
       if (VC.weather) VC.weather.forceState('HEAVY_RAIN');
 
     // ── drive ──────────────────────────────────────────────────────────────
@@ -118,20 +175,25 @@
         VC.addSkidmark(680, 714, 820, 714, 0.60);
         VC.addSkidmark(680, 733, 820, 733, 0.60);
       }
-      basePlayingScene(chaseX, chaseY, 7200, 55, 20, 3);
+      basePlayingScene(chaseX, chaseY, 12800, 55, 20, 5);
       VC.player.vehicle = chaseCar;
       chaseCar.driver = VC.player;
-      if (VC.wanted) VC.wanted.setLevel(3, VC.player);
-      VC.player.wantedLevel = 3;
+      if (VC.wanted) VC.wanted.setLevel(5, VC.player);
+      VC.player.wantedLevel = 5;
+      if (VC.Missions) {
+        VC.Missions.state.currentIndex = 0;
+        VC.Missions.startCurrent();
+      }
 
       // Seed two police cruisers behind the player
       if (VC.police) {
-        VC.police.seedState(2, VC.player);
+        VC.police.seedState(4, VC.player);
         // Manually position the cruisers on the same road behind
         var cr = VC.police.cruisers;
         if (cr.length >= 1) {
           cr[0].vehicle.x = chaseX - 140; cr[0].vehicle.y = chaseY + 12;
           cr[0].vehicle.heading = 0; cr[0].vehicle.speed = 220;
+          cr[0].vehicle.health = 32;
           cr[0].sirenPhase = 0;
         }
         if (cr.length >= 2) {
@@ -139,10 +201,36 @@
           cr[1].vehicle.heading = 0.08; cr[1].vehicle.speed = 200;
           cr[1].sirenPhase = Math.PI;
         }
+        if (cr.length >= 3) {
+          cr[2].vehicle.x = chaseX - 105; cr[2].vehicle.y = chaseY + 82;
+          cr[2].vehicle.heading = -0.18; cr[2].vehicle.speed = 210;
+          cr[2].sirenPhase = Math.PI * 0.5;
+        }
+        if (cr.length >= 4) {
+          cr[3].vehicle.x = chaseX - 48; cr[3].vehicle.y = chaseY - 92;
+          cr[3].vehicle.heading = 0.22; cr[3].vehicle.speed = 195;
+          cr[3].sirenPhase = Math.PI * 1.5;
+          cr[3].disabled = false;
+        }
+        if (cr.length >= 3) {
+          cr[2].vehicle.health = 18;
+          cr[2].vehicle.damageFlash = 0.8;
+          if (VC.explodeVehicle) VC.explodeVehicle(cr[2].vehicle);
+        }
       }
+      // The blast hurts the player, and a single still frame would keep the full
+      // red hit flash on screen, tinting the whole cover red.
+      if (VC.combat && VC.combat.clearScreenCues) VC.combat.clearScreenCues();
+      // Advance the blast a few effect steps so the fireball is caught mid-explosion.
+      if (VC.updateVehicleEffects) {
+        VC.updateVehicleEffects(0.15);
+        VC.updateVehicleEffects(0.15);
+      }
+      // Start from a clean message stack; only the pursuit call belongs on the cover.
+      if (VC.hud && VC.hud.clearToasts) VC.hud.clearToasts();
 
       VC.camera.snapTo(chaseX + 80, chaseY);
-      VC.camera.zoom = 1.15; VC.camera.leadDist = 160;
+      VC.camera.zoom = 1.35; VC.camera.leadDist = 145;
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 5.5;
       if (VC.hud) VC.hud.toast('INTERCEPTOR UNIT 7 — ALL UNITS PURSUE', 4.0);
@@ -209,6 +297,8 @@
   function update(dt) {
     gameTime += dt;
     if (VC.weather) VC.weather.update(dt, VC.city, VC.player, gameTime);
+    if (VC.Audio && VC.weather) VC.Audio.setRainIntensity(VC.weather.rainIntensity);
+    if (VC.Audio && VC.player) VC.Audio.setHeartbeat(VC.player.health < 30);
 
     // ── Global binds ──────────────────────────────────────────────────────
     if (VC.Input.justPressed('Escape')) {
@@ -232,13 +322,18 @@
     }
 
     // R — reload weapon
-    if (VC.Input.justPressed('KeyR') && VC.gameState === 'playing' && !VC.player.vehicle) {
+    if (VC.Input.actionPressed('reload') && VC.gameState === 'playing' && !VC.player.vehicle) {
       if (VC.Weapons) VC.Weapons.startReload();
     }
 
     // Q — cycle weapon
-    if (VC.Input.justPressed('KeyQ') && VC.gameState === 'playing' && !VC.player.vehicle) {
+    if (VC.Input.actionPressed('cycle') && VC.gameState === 'playing' && !VC.player.vehicle) {
       if (VC.Weapons) VC.Weapons.cycleWeapon();
+    }
+
+    // E — pick up weapon crate
+    if (VC.Input.actionPressed('pickup') && VC.gameState === 'playing' && !VC.player.vehicle) {
+      if (VC.Weapons) VC.Weapons.pickupNearby(VC.player);
     }
 
     // Space — skip mission dialog
@@ -295,6 +390,13 @@
       }
 
       if (VC.Weapons) VC.Weapons.update(dt);
+      if (VC.Weapons && VC.Weapons.state.current === 'longshot' && VC.Input.mouse.rightDown) {
+        VC.Weapons.state.aiming = true;
+        if (VC.camera) VC.camera.sniperZoom(1);
+      } else if (VC.camera && !VC.player.vehicle) {
+        if (VC.Weapons) VC.Weapons.state.aiming = false;
+        VC.camera.sniperZoom(0);
+      }
       if (VC.wanted)  VC.wanted.update(dt);
       if (VC.police)  VC.police.update(dt, VC.player, gameTime);
       if (VC.PoliceAir) VC.PoliceAir.update(dt, VC.player, VC.city, gameTime);
@@ -304,6 +406,10 @@
 
       VC.player.update(dt, VC.city);
       VC.camera.update(dt, VC.player.vehicle || VC.player);
+      if (VC.camera) {
+        var cameraSpeed = VC.player.vehicle ? Math.abs(VC.player.vehicle.speed) / VC.player.vehicle.maxSpeed : 0;
+        VC.camera.updateEffects(dt, cameraSpeed);
+      }
       VC.hud.update(dt, VC.player);
 
     } else if (VC.gameState === 'paused') {
@@ -354,7 +460,7 @@
     }
 
     // Shot mode
-    if (shot && ['title','start','street','play','drive','hud','end','chase','mission'].indexOf(shot) !== -1) {
+    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight'].indexOf(shot) !== -1) {
       setupDeterministicShot(shot, seed);
       render();
       return;
@@ -366,6 +472,8 @@
 
     VC.RNG = new VC.Mulberry32(initialSeed);
     VC.city = VC.City.generate(initialSeed);
+    if (VC.RNG && VC.RNG.setSeed) VC.RNG.setSeed(initialSeed);
+    if (VC.Weapons) VC.Weapons.syncCityBoxes(VC.city);
     VC.camera.setBounds(0, 0, VC.city.worldWidth, VC.city.worldHeight);
 
     var startX = 740, startY = 705;

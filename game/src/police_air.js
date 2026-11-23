@@ -29,6 +29,8 @@
   var radioTimer = 0;
   var altitude = 280;
   var initialized = false;
+  var lostTimer = 0;
+  var radioMessage = 'AIR ONE OVERHEAD // CONTACT';
 
   function playerPosition(player) {
     if (!player) return { x: 0, y: 0 };
@@ -96,10 +98,14 @@
     get concealed() { return concealed; },
     get spotX() { return spotX; },
     get spotY() { return spotY; },
+    radio: function(message, duration) {
+      radioMessage = String(message || 'AIR ONE // RADIO');
+      radioTimer = duration || 3.5;
+    },
 
     seedOverhead: function(px, py, offset) {
-      x = px + 210;
-      y = py - 115;
+      x = px + 175;
+      y = py - 150;
       vx = 80;
       vy = 0;
       orbitAngle = offset || -0.55;
@@ -159,6 +165,19 @@
       spotX += (targetSpotX - spotX) * Math.min(1, dt * 2.6);
       spotY += (targetSpotY - spotY) * Math.min(1, dt * 2.6);
 
+      var helicopterDistance = Math.hypot(x - p.x, y - p.y);
+      if (helicopterDistance > orbitRadius * 2.2) {
+        lostTimer += dt;
+        if (lostTimer > 4.5 && radioTimer <= 0) {
+          radioTimer = 3.5;
+          radioMessage = 'AIR ONE // TARGET LOST';
+          lostTimer = 0;
+          if (VC.hud) VC.hud.toast('AIR ONE // TARGET LOST — LIFTING SEARCH', 2.8);
+        }
+      } else {
+        lostTimer = 0;
+      }
+
       concealed = isConcealed(player, city);
       var dx = p.x - spotX;
       var dy = p.y - spotY;
@@ -210,6 +229,14 @@
       ctx.beginPath();
       ctx.ellipse(0, 0, 104, 62, 0, 0, Math.PI * 2);
       ctx.fill();
+      var core = ctx.createRadialGradient(0, 0, 4, 0, 0, 44);
+      core.addColorStop(0, 'rgba(255,255,220,' + (poolAlpha * 1.5) + ')');
+      core.addColorStop(0.35, 'rgba(220,245,255,' + (poolAlpha * 0.9) + ')');
+      core.addColorStop(1, 'rgba(140,190,225,0)');
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 44, 26, 0, 0, Math.PI * 2);
+      ctx.fill();
       ctx.strokeStyle = spotted ? 'rgba(255,238,170,0.96)' : 'rgba(190,225,255,0.52)';
       ctx.lineWidth = spotted ? 3 : 1.5;
       ctx.setLineDash([10, 8]);
@@ -233,7 +260,7 @@
       ctx.translate(x, y);
       ctx.rotate(heading);
       ctx.rotate(roll);
-      ctx.scale(1, 0.82 + pitch);
+      ctx.scale(1.36, 1.10 + pitch);
 
       // Contrails / wake wisps behind the tail
       ctx.strokeStyle = 'rgba(170,210,230,0.22)';
@@ -247,9 +274,19 @@
 
       drawRotor(ctx, 0, 0, 58, (gameTime || 0) * 26, 'rgba(210,235,255,0.72)');
 
-      ctx.fillStyle = '#182436';
-      ctx.strokeStyle = '#91a8bd';
-      ctx.lineWidth = 2;
+      // A soft halo separates the dark airframe from the dark city below it.
+      var halo = ctx.createRadialGradient(0, 0, 10, 0, 0, 74);
+      halo.addColorStop(0, 'rgba(150,205,255,0.22)');
+      halo.addColorStop(1, 'rgba(120,180,240,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, 74, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Lighter airframe with a bright outline so the aircraft reads at a glance.
+      ctx.fillStyle = '#22344d';
+      ctx.strokeStyle = '#d6e8f7';
+      ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.moveTo(28, -14);
       ctx.quadraticCurveTo(44, 0, 28, 14);
@@ -259,6 +296,12 @@
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+
+      // Cockpit glass catches the city glow.
+      ctx.fillStyle = 'rgba(120,215,255,0.42)';
+      ctx.beginPath();
+      ctx.ellipse(20, 0, 9, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
 
       ctx.fillStyle = '#263850';
       ctx.fillRect(-34, -4, 17, 8);
@@ -334,7 +377,7 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffb2bd';
-      ctx.fillText('AIR ONE OVERHEAD // CONTACT', x0 + w / 2, y0 + h / 2);
+      ctx.fillText(radioMessage, x0 + w / 2, y0 + h / 2);
       ctx.restore();
     }
   };

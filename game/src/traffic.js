@@ -10,6 +10,7 @@
   var LANE_OFFSET = 18.5; // distance from road curb to lane center
   var STOP_DISTANCE = 32; // distance from stop line before crosswalk
   var MAX_TRAFFIC = 16;
+  // Traffic comment: named RNG and siren reactions keep nearby traffic tense and repeatable in shot mode.
   var SPAWN_RADIUS_MIN = 280;
   var SPAWN_RADIUS_MAX = 880;
   var DESPAWN_RADIUS = 1180;
@@ -240,6 +241,16 @@
       var throttle = 0;
       var steer = 0;
       var brake = false;
+
+      if (player && player.vehicle && VC.wanted && VC.wanted.level >= 2) {
+        var pursuitDist = Math.hypot(veh.x - player.vehicle.x, veh.y - player.vehicle.y);
+        if (pursuitDist < 170) {
+          targetSpeed = Math.min(targetSpeed, 35);
+          brake = true;
+          veh.heading += ((tc.laneDir || 1) * 0.025) * dt * 6;
+          if (VC.Audio) VC.Audio.startSiren();
+        }
+      }
 
       // 1. Maintain Lane Alignment
       var laneCenter = 0;

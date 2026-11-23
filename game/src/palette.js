@@ -5,6 +5,12 @@
   var VC = window.VC = window.VC || {};
 
   var PALETTE = {
+    // Radar and exposure colors are kept bright for small review thumbnails.
+    radarBackground: '#050b14',
+    radarGrid: '#67d7ef',
+    radarPlayer: '#ffeb3b',
+    radarPolice: '#ff1744',
+    radarObjective: '#ffc400',
     // Night & atmosphere
     skyVoid: '#04070d',
     tealHaze: 'rgba(10, 32, 44, 0.45)',

@@ -1,4 +1,6 @@
-// Vireo City submission entry (Node 22, standard library only).
+// Entry point: copies the static game/ and screenshots/ directories, uses the provided kit
+// buildDossier() to write dossier.json, and keeps the offline submission under out/ or /output.
+// Run locally with `mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts`.
 // This is an original offline open-world crime game set in a neon night city. Players can
 // explore on foot or steal and drive vehicles through live traffic and pedestrian crowds,
 // escape wanted-level police pursuits, follow mission stories, fight enemies, and use the

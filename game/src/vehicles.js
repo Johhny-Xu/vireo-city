@@ -8,6 +8,7 @@
   VC.skidmarks = VC.skidmarks || [];
   var vehicleExplosions = [];
   var explosionFragments = [];
+  // Vehicles comment: drift smoke and collision sparks make vehicle damage readable at chase speed.
 
   function addSkidmark(x1, y1, x2, y2, alpha) {
     if (VC.skidmarks.length > 250) {
@@ -27,6 +28,14 @@
 
   // Catalog of original vehicle types
   var VEHICLE_TYPES = {
+    motorcycle: {
+      name: 'VPD Motos',
+      class: 'Pursuit Motorcycle',
+      w: 24, h: 10, maxSpeed: 390, reverseSpeed: 80,
+      accel: 410, brake: 560, turnSpeed: 4.2, grip: 10,
+      driftFactor: 0.7, mass: 0.45,
+      defaultColor: '#111827', roofColor: '#e5e7eb', glassColor: '#111827'
+    },
     sable: {
       name: 'Sable',
       class: 'Executive Sedan',
@@ -218,6 +227,10 @@
 
     var effectiveAccel = this.accel;
     var effectiveMaxSpeed = this.maxSpeed;
+    if (this.health < 45) {
+      effectiveAccel *= 0.72;
+      effectiveMaxSpeed *= 0.72;
+    }
     if (this.isBoosting) {
       effectiveAccel *= 1.45;
       effectiveMaxSpeed *= 1.25;
@@ -323,6 +336,7 @@
     if (VC.Audio) VC.Audio.gunshot();
     if (this.health <= 0) explodeVehicle(this);
   };
+
 
   Vehicle.prototype.repair = function(amount) {
     this.health = Math.min(this.maxHealth, this.health + (amount || 100));
@@ -683,7 +697,12 @@
       VC.Audio.explosion();
       VC.Audio.startSiren();
     }
-    if (VC.hud) VC.hud.toast('载具爆炸 // 周边警力已警戒', 2.8);
+    if (VC.hud) VC.hud.toast('VEHICLE EXPLOSION // UNITS ON ALERT', 2.8);
+    if (VC.camera) {
+      var cameraDist = VC.player ? Math.hypot(VC.player.x - vehicle.x, VC.player.y - vehicle.y) : 999;
+      var shakeAmount = Math.max(2, 12 * (1 - Math.min(1, cameraDist / 700)));
+      VC.camera.shake(shakeAmount, 0.32);
+    }
 
     if (VC.wanted) {
       var cur = VC.wanted.level;

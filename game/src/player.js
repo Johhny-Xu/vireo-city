@@ -31,7 +31,7 @@
     this.maxHealth = 100;
     this.armor = 50;
     this.maxArmor = 100;
-    this.cash = 250;
+    this.cash = 2500;
     this.wantedLevel = 0;
     this.weapon = 'UNARMED';
 
@@ -41,6 +41,10 @@
 
     // Visual feedback
     this.hitFlashTimer = 0;
+    // Sprint stamina: drains while moving, regenerates once released or rested.
+    this.stamina = 100;
+    this.maxStamina = 100;
+    this.splashTimer = 0;
   }
 
   Player.prototype.damage = function(amount) {
@@ -184,7 +188,14 @@
 
     // Process movement input
     var move = VC.Input ? VC.Input.getMovementVector() : { x: 0, y: 0, len: 0 };
-    this.isSprinting = (VC.Input && VC.Input.isSprinting()) && move.len > 0;
+    var sprintHeld = VC.Input ? (VC.Input.action ? VC.Input.action('sprint') : VC.Input.isSprinting()) : false;
+    this.isSprinting = sprintHeld && move.len > 0 && this.stamina > 4;
+    if (this.isSprinting) {
+      this.stamina = Math.max(0, this.stamina - dt * 24);
+    } else {
+      this.stamina = Math.min(this.maxStamina, this.stamina + dt * 17);
+    }
+    if (this.stamina <= 0) this.isSprinting = false;
     var targetSpeed = this.isSprinting ? this.sprintSpeed : this.walkSpeed;
 
     var targetVx = move.x * targetSpeed;
@@ -197,6 +208,14 @@
 
     var curSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
     this.isMoving = curSpeed > 8;
+
+    if (this.isMoving && VC.weather && VC.weather.isRaining()) {
+      this.splashTimer -= dt;
+      if (this.splashTimer <= 0) {
+        if (VC.weather.spawnSplash) VC.weather.spawnSplash(this.x, this.y);
+        this.splashTimer = this.isSprinting ? 0.055 : 0.10;
+      }
+    }
 
     // Advance walk cycle
     if (this.isMoving) {
@@ -346,6 +365,17 @@
     if (this.vehicle) return; // Inside vehicle, rendered as vehicle
     ctx.save();
     ctx.translate(this.x, this.y);
+
+    // High-contrast civic marker makes the on-foot character legible at thumbnail zoom.
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180, 245, 255, 0.92)';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
 
     // 1. Drop shadow (soft blurred dark ellipse)
     ctx.save();

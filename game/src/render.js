@@ -1,6 +1,7 @@
 // Comprehensive multi-pass renderer for Vireo City
 (function() {
   'use strict';
+  // Render comment: one shared night grade and selective bloom layers create a readable rain-neon chase frame.
 
   var VC = window.VC = window.VC || {};
 
@@ -15,6 +16,8 @@
       ctx.fillRect(0, 0, 1280, 800);
 
       // Begin Camera World Space
+      ctx.save();
+      camera.beginRender(ctx);
       camera.applyTransform(ctx);
 
       // 1. Water & Ocean Surface
@@ -47,6 +50,7 @@
 
       // 7c. Weapon world effects (tracers, muzzle flash, shell casings, decals)
       if (VC.Weapons) VC.Weapons.renderWorldEffects(ctx);
+      if (VC.Weapons) VC.Weapons.renderWeaponBoxes(ctx, timeSec);
 
       if (VC.renderVehicleEffects) VC.renderVehicleEffects(ctx);
 
@@ -55,6 +59,7 @@
 
       // End Camera World Space
       camera.restoreTransform(ctx);
+      ctx.restore();
 
       // 8. Screen-Space Atmosphere: Rain mist, Teal Haze, Vignette
       this.renderScreenAtmosphere(ctx, timeSec);
@@ -891,8 +896,8 @@
       ctx.fillRect(0, 0, 1280, 800);
 
       // 2. Faint wet rain mist particles glistening in the air
-      ctx.strokeStyle = 'rgba(180, 220, 255, 0.18)';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(190, 225, 255, 0.28)';
+      ctx.lineWidth = 1.2;
       var rainT = (timeSec || 0) * 800;
       for (var r = 0; r < 28; r++) {
         var rx = (r * 47 + rainT * 0.4) % 1280;
@@ -902,6 +907,16 @@
         ctx.lineTo(rx + 3, ry + 12);
         ctx.stroke();
       }
+
+      // Cold-blue color grade plus a thin warm edge keeps neon and sirens separated.
+      ctx.fillStyle = 'rgba(18, 42, 70, 0.10)';
+      ctx.fillRect(0, 0, 1280, 800);
+      var edge = ctx.createRadialGradient(640, 400, 300, 640, 400, 720);
+      edge.addColorStop(0, 'rgba(0,0,0,0)');
+      edge.addColorStop(0.72, 'rgba(4,12,22,0.10)');
+      edge.addColorStop(1, 'rgba(72,92,120,0.24)');
+      ctx.fillStyle = edge;
+      ctx.fillRect(0, 0, 1280, 800);
 
       // 3. Cinematic Vignette around screen borders
       var vigGrad = ctx.createRadialGradient(640, 400, 380, 640, 400, 780);

@@ -1,6 +1,7 @@
 // Weapon system: pistol, shotgun, fists — projectiles, muzzle flash, reload, ammo HUD
 (function() {
   'use strict';
+  // Weapon comment: shotgun spread, sniper aim, reload timing, and crate state are all exposed through VC.Weapons.
 
   var VC = window.VC = window.VC || {};
 
@@ -53,6 +54,40 @@
       isMelee: false,
       shellCasing: true,
       muzzleColor: '#ff9922'
+    },
+    scatter12: {
+      name: 'Scatter 12',
+      display: 'SCATTER 12',
+      damage: 16,
+      range: 150,
+      spread: 0.34,
+      pellets: 10,
+      fireRate: 0.82,
+      recoil: 0.62,
+      reloadTime: 2.4,
+      clipSize: 8,
+      reserveSize: 40,
+      isHitscan: true,
+      isMelee: false,
+      shellCasing: true,
+      muzzleColor: '#ffb12b'
+    },
+    longshot: {
+      name: 'Longshot',
+      display: 'LONGSHOT .50',
+      damage: 95,
+      range: 720,
+      spread: 0.012,
+      pellets: 1,
+      fireRate: 1.45,
+      recoil: 0.38,
+      reloadTime: 2.8,
+      clipSize: 5,
+      reserveSize: 20,
+      isHitscan: true,
+      isMelee: false,
+      shellCasing: true,
+      muzzleColor: '#fff0b3'
     }
   };
 
@@ -61,6 +96,33 @@
   var muzzleFlashes = [];
   var shellCasings = [];
   var bulletDecals = [];
+  var weaponBoxes = [];
+
+  function syncCityBoxes(city) {
+    weaponBoxes.length = 0;
+    if (!city || !city.interactables) return;
+    for (var i = 0; i < city.interactables.length; i++) {
+      var item = city.interactables[i];
+      if (item.type === 'weapon_box') {
+        weaponBoxes.push({ x: item.x, y: item.y, weapon: item.weapon, id: item.id, taken: false });
+      }
+    }
+  }
+
+  function getSaveData() {
+    var taken = [];
+    for (var i = 0; i < weaponBoxes.length; i++) {
+      if (weaponBoxes[i].taken) taken.push(weaponBoxes[i].id);
+    }
+    return { taken: taken };
+  }
+
+  function fromSaveData(data) {
+    if (!data || !data.taken) return;
+    for (var i = 0; i < weaponBoxes.length; i++) {
+      weaponBoxes[i].taken = data.taken.indexOf(weaponBoxes[i].id) !== -1;
+    }
+  }
 
   // ── Weapon state ──────────────────────────────────────────────────────────
   var weaponState = {
@@ -71,7 +133,8 @@
     reloading: false,
     reloadTimer: 0,
     // cycle order
-    order: ['fists', 'vireo9', 'breaker']
+    order: ['fists', 'vireo9', 'breaker', 'scatter12', 'longshot'],
+    aiming: false
   };
 
   function getDef() {
@@ -118,16 +181,17 @@
   }
 
   function spawnShellCasing(wx, wy, angle) {
-    var ejectAngle = angle + Math.PI * 0.5 + (Math.random() - 0.5) * 0.6;
-    var speed = 55 + Math.random() * 45;
+    var rng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('weapons') : null;
+    var ejectAngle = angle + Math.PI * 0.5 + ((rng ? rng.random() : Math.random()) - 0.5) * 0.6;
+    var speed = 55 + (rng ? rng.random() : Math.random()) * 45;
     shellCasings.push({
       x: wx, y: wy,
       vx: Math.cos(ejectAngle) * speed,
       vy: Math.sin(ejectAngle) * speed,
       life: 0.8,
       maxLife: 0.8,
-      angle: Math.random() * Math.PI * 2,
-      spin: (Math.random() - 0.5) * 18
+      angle: (rng ? rng.random() : Math.random()) * Math.PI * 2,
+      spin: ((rng ? rng.random() : Math.random()) - 0.5) * 18
     });
     if (shellCasings.length > 60) shellCasings.shift();
   }
@@ -141,7 +205,16 @@
     projectiles.push({
       x: sx, y: sy,
       tx: tx, ty: ty,
-      life: 0.08, maxLife: 0.08
+      life: 0.08, maxLife: 0.08,
+      weapon: weaponState.current
+    });
+  }
+
+  function spawnImpactTracer(sx, sy, tx, ty, weapon) {
+    projectiles.push({
+      x: sx, y: sy, tx: tx, ty: ty,
+      life: 0.12, maxLife: 0.12,
+      weapon: weapon || 'vireo9'
     });
   }
 
@@ -188,17 +261,49 @@
     // Spawn effects
     spawnMuzzleFlash(muzzleX, muzzleY, player.facing);
     if (def.shellCasing) spawnShellCasing(muzzleX, muzzleY, player.facing);
-    if (VC.Audio) VC.Audio.gunshot();
+    if (VC.Audio) {
+      if (weaponState.current === 'scatter12' && VC.Audio.shotgunSound) VC.Audio.shotgunSound();
+      else if (weaponState.current === 'longshot' && VC.Audio.sniperSound) VC.Audio.sniperSound();
+      else VC.Audio.gunshot();
+    }
 
     // Hitscan rays (one per pellet)
     var hits = [];
+    var rng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('weapons') : null;
     for (var p = 0; p < def.pellets; p++) {
-      var ang = player.facing + (Math.random() - 0.5) * 2 * def.spread;
+      var randomSpread = rng ? rng.random() : Math.random();
+      var ang = player.facing + (randomSpread - 0.5) * 2 * def.spread;
       var hitX = player.x + Math.cos(ang) * def.range;
       var hitY = player.y + Math.sin(ang) * def.range;
       spawnTracerProjectile(muzzleX, muzzleY, hitX, hitY);
       spawnBulletDecal(hitX, hitY);
       hits.push({ hit: true, damage: def.damage, x: hitX, y: hitY });
+    }
+
+    if (def.recoil && VC.camera) {
+      VC.camera.shake(def.recoil * 10, 0.12);
+    }
+    if (weaponState.current === 'longshot') {
+      weaponState.aiming = true;
+    }
+
+    // Resolve world hits against dismounted police and show stagger/death feedback.
+    if (VC.police && VC.police.footOfficers) {
+      for (var h = 0; h < hits.length; h++) {
+        for (var o = 0; o < VC.police.footOfficers.length; o++) {
+          var officer = VC.police.footOfficers[o];
+          if (officer.dead) continue;
+          if (Math.hypot(officer.x - hits[h].x, officer.y - hits[h].y) < 22) {
+            officer.health = (officer.health || 55) - hits[h].damage;
+            if (VC.combat) VC.combat.registerEnemyHit(officer, hits[h].damage);
+            if (officer.health <= 0) {
+              if (VC.combat) VC.combat.registerEnemyDeath(officer);
+              else officer.dead = true;
+            }
+            break;
+          }
+        }
+      }
     }
 
     // Trigger wanted level: fired a weapon in public
@@ -212,6 +317,49 @@
     }
 
     return hits;
+  }
+
+  function getNearbyBox(player) {
+    if (!player) return null;
+    for (var i = 0; i < weaponBoxes.length; i++) {
+      var box = weaponBoxes[i];
+      if (!box.taken && Math.hypot(player.x - box.x, player.y - box.y) < 48) return box;
+    }
+    return null;
+  }
+
+  function pickupNearby(player) {
+    var box = getNearbyBox(player);
+    if (!box) return false;
+    box.taken = true;
+    equip(box.weapon);
+    if (VC.hud) VC.hud.toast(WEAPON_DEFS[box.weapon].display + ' PICKED UP', 2.2);
+    if (VC.Audio) VC.Audio.uiBlip(1250);
+    return true;
+  }
+
+  function renderWeaponBoxes(ctx, timeSec) {
+    for (var i = 0; i < weaponBoxes.length; i++) {
+      var box = weaponBoxes[i];
+      if (box.taken) continue;
+      var pulse = 1 + 0.12 * Math.sin((timeSec || 0) * 4 + i);
+      ctx.save();
+      ctx.translate(box.x, box.y);
+      ctx.shadowColor = box.weapon === 'longshot' ? '#ff5c55' : '#ffb12b';
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = 'rgba(255,190,60,0.18)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 26 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#202833';
+      ctx.strokeStyle = '#ffd66b';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-18, -12, 36, 24);
+      ctx.strokeRect(-18, -12, 36, 24);
+      ctx.fillStyle = '#ffb12b';
+      ctx.fillRect(-12, -3, 24, 6);
+      ctx.restore();
+    }
   }
 
   function update(dt) {
@@ -278,9 +426,9 @@
       var a = item.life / item.maxLife;
       ctx.save();
       ctx.globalAlpha = a * 0.7;
-      ctx.strokeStyle = '#ffee88';
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = '#ffee88';
+      ctx.strokeStyle = item.weapon === 'longshot' ? '#fff4cf' : item.weapon === 'scatter12' ? '#ffb12b' : '#ffee88';
+      ctx.lineWidth = item.weapon === 'longshot' ? 2.2 : item.weapon === 'scatter12' ? 1.1 : 1.5;
+      ctx.shadowColor = ctx.strokeStyle;
       ctx.shadowBlur = 4;
       ctx.beginPath();
       ctx.moveTo(item.x, item.y);
@@ -337,10 +485,18 @@
     startReload: startReload,
     update: update,
     renderWorldEffects: renderWorldEffects,
+    renderWeaponBoxes: renderWeaponBoxes,
+    getNearbyBox: getNearbyBox,
+    pickupNearby: pickupNearby,
     getDef: getDef,
+    syncCityBoxes: syncCityBoxes,
+    getSaveData: getSaveData,
+    fromSaveData: fromSaveData,
     muzzleFlashes: muzzleFlashes,
     projectiles: projectiles,
     shellCasings: shellCasings,
-    bulletDecals: bulletDecals
+    bulletDecals: bulletDecals,
+    spawnImpactTracer: spawnImpactTracer,
+    spawnShellCasing: spawnShellCasing
   };
 })();

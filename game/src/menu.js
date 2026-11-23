@@ -201,6 +201,13 @@
       ctx.textBaseline = 'middle';
       ctx.fillText('VIREO CITY', 640, titleY);
 
+      // Neon title scan: a moving cyan line gives the logo a readable arcade title treatment.
+      var scanY = titleY - 80 + ((timeSec * 55) % 160);
+      ctx.fillStyle = 'rgba(0,240,255,0.18)';
+      ctx.fillRect(390, scanY, 500, 1);
+      ctx.fillStyle = 'rgba(255,255,255,0.34)';
+      ctx.fillRect(390, scanY - 1, 500, 1);
+
       // Subtitle
       VC.drawGlowText(
         ctx,
@@ -213,6 +220,21 @@
         10,
         'center'
       );
+
+      var missionCount = 0;
+      var weaponCount = 0;
+      if (VC.Missions) missionCount = Math.max(0, Math.min(8, VC.Missions.state.currentIndex));
+      if (VC.Weapons) {
+        for (var wk in VC.Weapons.defs) {
+          if (wk !== 'fists') weaponCount++;
+        }
+      }
+      ctx.font = 'bold 12px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#9eb4ca';
+      ctx.fillText('SAVE: ' + missionCount + ' / 8 MISSIONS  |  ' + weaponCount + ' WEAPONS UNLOCKED', 640, 318);
+      ctx.fillStyle = '#6f879e';
+      ctx.fillText('WASD MOVE • SHIFT SPRINT • E PICK UP • 8-MISSION STORY • BUILD YOUR ARSENAL', 640, 342);
 
       // Menu Options
       var items = [

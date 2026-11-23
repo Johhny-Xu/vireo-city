@@ -22,6 +22,15 @@
   };
 
   var canvasEl = null;
+  // Central action map lets gameplay code avoid scattering physical key names.
+  var ACTIONS = {
+    sprint: ['ShiftLeft', 'ShiftRight'],
+    pickup: ['KeyE'],
+    reload: ['KeyR'],
+    cycle: ['KeyQ'],
+    map: ['Tab', 'KeyM'],
+    horn: ['KeyH']
+  };
 
   function onKeyDown(e) {
     if (preventKeys[e.code] || e.code === 'Tab') {
@@ -85,6 +94,23 @@
   }
 
   var Input = {
+    ACTIONS: ACTIONS,
+    action: function(name) {
+      var codes = ACTIONS[name];
+      if (!codes) return false;
+      for (var i = 0; i < codes.length; i++) {
+        if (keys[codes[i]]) return true;
+      }
+      return false;
+    },
+    actionPressed: function(name) {
+      var codes = ACTIONS[name];
+      if (!codes) return false;
+      for (var i = 0; i < codes.length; i++) {
+        if (keysJustPressed[codes[i]]) return true;
+      }
+      return false;
+    },
     init: function(canvas) {
       canvasEl = canvas;
       window.addEventListener('keydown', onKeyDown, { passive: false });

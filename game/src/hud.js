@@ -38,6 +38,8 @@
   var radioIndex    = 0;
   var radioTimer    = 0;    // seconds until next station switch
   var RADIO_INTERVAL = 28;
+  var objectiveProgress = '';
+  // HUD comment: larger mission and ammo readouts keep gameplay legibility intact at review thumbnail size.
 
   // ── Wanted decay timer display ─────────────────────────────────────────────
   var wantedBlinkTimer = 0;
@@ -63,10 +65,26 @@
     ctx.closePath();
   }
 
-  var HUD = {
+  var Hud = {
+    setCashImmediate: function(amount) {
+      cashTarget = Math.max(0, Math.round(Number(amount) || 0));
+      cashDisplay = cashTarget;
+      cashFlash = 0;
+    },
+
+    setObjectiveProgress: function(text) {
+      objectiveProgress = text;
+    },
+
     toast: function(message, duration) {
       toasts.push({ text: message, time: duration || 3.0, maxTime: duration || 3.0 });
       if (toasts.length > 5) toasts.shift();
+    },
+
+    // Deterministic shot scenes stage several events at once, which would leave a
+    // stack of debug-looking messages in the corner of a single still frame.
+    clearToasts: function() {
+      toasts.length = 0;
     },
 
     showSavedToast: function() {
@@ -110,7 +128,7 @@
       }
 
       // Map toggle
-      if (VC.Input && (VC.Input.justPressed('Tab') || VC.Input.justPressed('KeyM'))) {
+      if (VC.Input && (VC.Input.actionPressed ? VC.Input.actionPressed('map') : (VC.Input.justPressed('Tab') || VC.Input.justPressed('KeyM')))) {
         this.toggleMap();
         if (VC.Audio) VC.Audio.uiBlip(880);
       }
@@ -135,6 +153,10 @@
       } else {
         this.renderWeaponBadge(ctx, player, timeSec);
         if (player.nearVehicle) this.renderVehiclePrompt(ctx, player.nearVehicle);
+        if (VC.Weapons) {
+          var nearbyBox = VC.Weapons.getNearbyBox(player);
+          if (nearbyBox) this.renderWeaponBoxPrompt(ctx, nearbyBox);
+        }
       }
 
       // 4. Upper-center: Mission tracker
@@ -227,6 +249,17 @@
       ctx.fillRect(hpX, arY, hpW * arRatio, arH);
       ctx.strokeStyle = 'rgba(255,255,255,0.15)';
       ctx.strokeRect(hpX, arY, hpW, arH);
+      if (!player.vehicle) {
+        var stamina = typeof player.stamina === 'number' ? player.stamina : 100;
+        var stY = y + 54;
+        ctx.fillStyle = '#101620';
+        ctx.fillRect(hpX, stY, hpW, 5);
+        ctx.fillStyle = stamina < 20 ? '#ff1744' : '#ffd54f';
+        ctx.fillRect(hpX, stY, hpW * Math.max(0, stamina / player.maxStamina), 5);
+        ctx.fillStyle = '#8aa0b8';
+        ctx.textAlign = 'left';
+        ctx.fillText('SPRINT', x + 10, stY + 2);
+      }
     },
 
     // ── Top-right: cash + wanted ─────────────────────────────────────────────
@@ -296,7 +329,7 @@
         ctx.font = 'bold 8px monospace';
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ffb12b';
-        ctx.fillText('EVADING / 隐藏中', boxX, barY + 15);
+        ctx.fillText('EVADING / CONCEALED', boxX, barY + 15);
       }
     },
 
@@ -330,6 +363,12 @@
       } else if (reloading) {
         ctx.fillStyle = '#ffaa00';
         ctx.fillText('RELOADING...', x + 14, y + 42);
+        var reloadDef = weapons.getDef();
+        var frac = reloadDef ? 1 - (weapons.state.reloadTimer / reloadDef.reloadTime) : 0;
+        ctx.fillStyle = 'rgba(255,170,0,0.18)';
+        ctx.fillRect(x + 14, y + 58, w - 28, 4);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(x + 14, y + 58, (w - 28) * Math.max(0, Math.min(1, frac)), 4);
       } else {
         // Clip dots
         var clipSize = def ? def.clipSize : 0;
@@ -415,6 +454,18 @@
       ctx.restore();
     },
 
+    renderWeaponBoxPrompt: function(ctx, box) {
+      var def = VC.Weapons.defs[box.weapon];
+      var cx = 640, cy = 735, w = 360, h = 36, x = cx - w / 2, y = cy - h / 2;
+      ctx.save();
+      ctx.fillStyle = 'rgba(20,12,6,0.92)';
+      ctx.strokeStyle = '#ffb12b'; ctx.lineWidth = 1.5;
+      VC.roundRect(ctx, x, y, w, h, 6); ctx.fill(); ctx.stroke();
+      VC.drawGlowText(ctx, 'PRESS E — PICK UP ' + (def ? def.display : 'WEAPON'),
+        cx, cy, 'bold 13px "Courier New", monospace', '#ffca55', 'rgba(255,177,43,0.7)', 10, 'center');
+      ctx.restore();
+    },
+
     // ── Mission tracker (upper-center) ───────────────────────────────────────
     renderMissionTracker: function(ctx, timeSec) {
       var w = 360, h = 50, x = 640 - w / 2, y = 24;
@@ -435,7 +486,10 @@
         ctx.fillText('\u25c6 ' + (m ? m.title.toUpperCase() : 'MISSION'), x + 12, y + 8);
         ctx.font = '11px "Courier New", monospace';
         ctx.fillStyle = '#d0deee';
-        ctx.fillText(obj ? obj.label : 'Complete objectives', x + 12, y + 28);
+        var objText = obj ? obj.label : 'Complete objectives';
+        if (obj && obj.type === 'takeout') objText += ' [' + (VC.Missions.state.takeoutCount || 0) + '/' + obj.count + ']';
+        if (objectiveProgress) objText = objText + '  ' + objectiveProgress;
+        ctx.fillText(objText, x + 12, y + 28);
       } else {
         ctx.font = 'bold 12px "Courier New", monospace';
         ctx.fillStyle = '#ffaa00';
@@ -476,6 +530,16 @@
       ctx.moveTo(mx, my + gap);       ctx.lineTo(mx, my + gap + len);
       ctx.stroke();
       ctx.restore();
+
+      if (weapons && weapons.state.aiming && weapons.state.current === 'longshot') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(2,5,9,0.72)';
+        ctx.beginPath();
+        ctx.rect(0, 0, 1280, 400);
+        ctx.rect(0, 400, 1280, 400);
+        ctx.fill();
+        ctx.restore();
+      }
     },
 
     // ── Toasts ────────────────────────────────────────────────────────────────
@@ -524,6 +588,14 @@
     renderRadioBanner: function(ctx, timeSec) {
       var rx = 1252, ry = 516, rw = 274, rh = 38, x = rx - rw;
       var station = RADIO_STATIONS[radioIndex];
+      var trackText = station.track;
+      if (VC.Missions) {
+        var missionIndex = VC.Missions.state.currentIndex;
+        if (missionIndex >= 6) trackText = 'VPD NEWS: Lena convoy reported escaped on Meridian';
+        else if (missionIndex >= 5) trackText = 'PORT NEWS: Buyer van lost near Coral Pier';
+        else if (missionIndex >= 3) trackText = 'VPD ALERT: Shipment violence rises in the docks';
+        else if (missionIndex >= 1) trackText = 'NEWSWIRE: East-lot cargo theft under investigation';
+      }
       ctx.save();
       ctx.fillStyle = 'rgba(6,10,18,0.78)';
       ctx.strokeStyle = 'rgba(255,100,200,0.3)';
@@ -537,7 +609,6 @@
       ctx.fillText('\u266b ' + station.station, x + 10, ry + 6);
 
       // Track name is fitted to one line; it is never wrapped or redrawn.
-      var trackText = station.track;
       var trackFontSize = 10;
       ctx.font = '10px monospace';
       while (ctx.measureText(trackText).width > rw - 20 && trackFontSize > 8) {
@@ -698,5 +769,5 @@
     }
   };
 
-  VC.hud = HUD;
+  VC.hud = Hud;
 })();

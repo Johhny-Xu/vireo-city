@@ -14,6 +14,8 @@
   var engineGain = null;
   var helicopterOsc = null;
   var helicopterGain = null;
+  var rainOsc = null, rainGain = null, heartbeatTimer = null;
+  // Audio comment: synthesized rain and heartbeat layers give weather and low-health state immediate feedback offline.
 
   function getAudioContext() {
     if (!audioCtx) {
@@ -84,6 +86,47 @@
 
     init: function() {
       getAudioContext();
+      this.setRainIntensity(0.45);
+    },
+
+    setRainIntensity: function(intensity) {
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      var now = ctx.currentTime;
+      if (!rainOsc) {
+        rainOsc = ctx.createOscillator();
+        rainGain = ctx.createGain();
+        var filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = 1300;
+        rainOsc.type = 'sawtooth';
+        rainOsc.frequency.value = 55;
+        rainGain.gain.value = 0.0001;
+        rainOsc.connect(filter); filter.connect(rainGain); rainGain.connect(ctx.destination);
+        rainOsc.start();
+      }
+      rainGain.gain.linearRampToValueAtTime(0.025 + Math.max(0, intensity) * 0.055, now + 0.18);
+    },
+
+    setHeartbeat: function(active) {
+      if (heartbeatTimer && !active) {
+        clearInterval(heartbeatTimer); heartbeatTimer = null;
+      }
+      if (!active || heartbeatTimer) return;
+      heartbeatTimer = setInterval(function() {
+        var ctx = getAudioContext();
+        if (!ctx || !VC.player) return;
+        try {
+          var now = ctx.currentTime;
+          var osc = ctx.createOscillator();
+          var gain = ctx.createGain();
+          osc.type = 'sine'; osc.frequency.setValueAtTime(72, now);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(now); osc.stop(now + 0.1);
+        } catch (e) {}
+      }, 820);
     },
 
     uiBlip: function(freq) {
@@ -178,6 +221,46 @@
 
         thumpOsc.start(now);
         thumpOsc.stop(now + 0.3);
+      } catch (e) {}
+    },
+
+    shotgunSound: function() {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        var now = ctx.currentTime;
+        var noiseBuf = createNoiseBuffer(0.42);
+        if (noiseBuf) {
+          var source = ctx.createBufferSource();
+          source.buffer = noiseBuf;
+          var filter = ctx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 700;
+          var gain = ctx.createGain();
+          gain.gain.setValueAtTime(0.52, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+          source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+          source.start(now); source.stop(now + 0.42);
+        }
+      } catch (e) {}
+    },
+
+    sniperSound: function() {
+      if (!this.enabled) return;
+      var ctx = getAudioContext();
+      if (!ctx) return;
+      try {
+        var now = ctx.currentTime;
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(95, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.55);
+        gain.gain.setValueAtTime(0.48, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(now); osc.stop(now + 0.58);
       } catch (e) {}
     },
 

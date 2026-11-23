@@ -1,4 +1,5 @@
 # Vireo City (Johhny-Xu/vireo-city)
+<!-- Screenshot-first documentation: the review build exposes deterministic chase, street, firefight, and title scenes. -->
 
 [![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![rank](https://make.fun/badge/gta6-01/Johhny-Xu/vireo-city/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
@@ -59,7 +60,7 @@ node serve.ts
 - Police roadblocks at 4+ wanted stars: VPD cruisers, flashing lights, cones, warning banners, collision damage, and a 3-unit on-screen cap
 - Heavy 6-star response: armored interceptors with stronger ramming damage and reusable foot officers that use cover and return to vehicles while the player is hidden
 - Evading and concealment: sights and police searchlights reset wanted decay; building shadows, tunnel and canal underpasses immediately break line of sight
-- HUD evasion feedback: EVADING / 隐藏中 label, wanted-star decay progress bar, red screen-edge detection warning, siren proximity, and pursuit banners
+- HUD evasion feedback: EVADING / CONCEALED label, wanted-star decay progress bar, red screen-edge detection warning, siren proximity, and pursuit banners
 - Explosive vehicles: smoke, fire, shockwaves, debris, fragments, blast damage, explosion audio, and chain escalation of wanted level
 - Pursuit AI, interceptors, sirens, and patrol chases
 - Police air support with a visible VPD AIR ONE helicopter, sweeping searchlight, minimap altitude icon, rotor audio, and 3+ star escalation
@@ -75,6 +76,12 @@ node serve.ts
 - Wet-road accumulation with neon/vehicle/police reflections and reduced tire grip
 - Rain particles, puddle splashes, distant lightning, thunder audio, fog, and reduced visibility
 - Pedestrians open umbrellas and move faster in wet weather
+- Radar-style minimap with a larger high-contrast frame, solid white-bordered player triangle, mission diamond, police triangles, helicopter circle, weapon boxes, and corner scan ticks
+- Lightning flashes brighten the full scene and street reflections; delayed thunder, puddle ripples, and splashing scale with storm intensity
+- Visible VPD helicopter with red/blue beacons and a bright two-layer searchlight; it warns through its radio channel when the target is lost
+- Sprint stamina drains and recovers, with rain-running splash particles and $2,500 starting cash
+- Named RNG substreams make weather, pedestrians, and traffic deterministic independently
+- Eight complete story missions and additional Scatter 12/Longshot weapon progression with city-generated weapon crates
 
 ## Screenshots
 
@@ -89,6 +96,8 @@ Capture the game at 1280x800 from the repository root:
 
 Repeat with `street`, `mission`, and `title`, then place the resulting images in
 `screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-mission.jpg`, and `4-title.jpg`.
+Use `?shot=firefight&seed=1986` for the dedicated rain-night combat view; review-safe shot names are
+`chase`, `street`, `firefight`, and `title`, and fixed seeds make each result repeatable.
 
 ## Submission structure
 

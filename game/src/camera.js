@@ -17,6 +17,12 @@
     this.lookAheadX = 0;
     this.lookAheadY = 0;
     this.leadDist = 70; // pixels to look ahead when moving/aiming
+    this.baseZoom = 1.0;
+    // Named "sniperZoomTarget" because an instance field called sniperZoom would
+    // shadow Camera.prototype.sniperZoom(enabled) and break the scoped-fire call.
+    this.sniperZoomTarget = 1.0;
+    this.shakeTimer = 0;
+    this.shakeAmount = 0;
 
     this.bounds = {
       minX: 0,
@@ -46,6 +52,24 @@
     this.lookAheadX = 0;
     this.lookAheadY = 0;
     this.clamp();
+  };
+
+  // Explosion shake and sniper zoom are camera-owned effects rather than render hacks.
+  Camera.prototype.shake = function(amount, duration) {
+    this.shakeAmount = Math.max(this.shakeAmount, amount || 6);
+    this.shakeTimer = Math.max(this.shakeTimer, duration || 0.25);
+  };
+
+  Camera.prototype.sniperZoom = function(enabled) {
+    this.sniperZoomTarget = enabled ? 1.55 : 1.0;
+  };
+
+  Camera.prototype.updateEffects = function(dt, speedRatio) {
+    var drivingZoom = 1.0 + Math.min(0.28, (speedRatio || 0) * 0.28);
+    this.baseZoom += (drivingZoom - this.baseZoom) * Math.min(1, dt * 2.4);
+    var desired = this.sniperZoomTarget > 1 ? this.sniperZoomTarget : this.baseZoom;
+    this.zoom += (desired - this.zoom) * Math.min(1, dt * 5);
+    if (this.shakeTimer > 0) this.shakeTimer = Math.max(0, this.shakeTimer - dt);
   };
 
   Camera.prototype.update = function(dt, targetEntity) {
@@ -132,6 +156,18 @@
 
   Camera.prototype.restoreTransform = function(ctx) {
     ctx.restore();
+  };
+
+  // Apply shake outside world coordinates so every rendered world element follows it once.
+  Camera.prototype.beginRender = function(ctx) {
+    var ox = 0;
+    var oy = 0;
+    if (this.shakeTimer > 0) {
+      var rng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('camera') : null;
+      ox = (rng ? rng.randFloat(-1, 1) : (Math.random() * 2 - 1)) * this.shakeAmount * (this.shakeTimer / 0.25);
+      oy = (rng ? rng.randFloat(-1, 1) : (Math.random() * 2 - 1)) * this.shakeAmount * (this.shakeTimer / 0.25);
+    }
+    ctx.translate(ox, oy);
   };
 
   VC.camera = new Camera();

@@ -33,6 +33,10 @@
   ];
 
   function Pedestrian(x, y, heading) {
+    var pedRng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('pedestrians') : null;
+    var random = function() { return pedRng ? pedRng.random() : Math.random(); };
+    var randInt = function(min, max) { return pedRng ? pedRng.randInt(min, max) : Math.floor(random() * (max - min + 1)) + min; };
+    this.rng = pedRng;
     this.x = x || 0;
     this.y = y || 0;
     this.vx = 0;
@@ -40,9 +44,9 @@
     this.heading = heading || 0;
     this.radius = 8;
 
-    this.walkSpeed = 48 + Math.random() * 22;
+    this.walkSpeed = 48 + random() * 22;
     this.sprintSpeed = 135;
-    this.walkPhase = Math.random() * Math.PI * 2;
+    this.walkPhase = random() * Math.PI * 2;
 
     // States: 'walking', 'crossing', 'dodging', 'fleeing', 'cowering'
     this.state = 'walking';
@@ -50,15 +54,16 @@
 
     // Sidewalk strip orientation: 'h' (horizontal sidewalk) or 'v' (vertical)
     this.walkAxis = 'h';
-    this.walkDir = Math.random() > 0.5 ? 1 : -1;
+    this.walkDir = random() > 0.5 ? 1 : -1;
 
     // Appearance
-    this.shirtColor = SHIRT_PALETTE[Math.floor(Math.random() * SHIRT_PALETTE.length)];
-    this.pantsColor = PANTS_PALETTE[Math.floor(Math.random() * PANTS_PALETTE.length)];
-    this.skinColor = SKIN_PALETTE[Math.floor(Math.random() * SKIN_PALETTE.length)];
-    this.hairColor = HAIR_PALETTE[Math.floor(Math.random() * HAIR_PALETTE.length)];
-    this.hasHat = Math.random() < 0.25;
+    this.shirtColor = SHIRT_PALETTE[randInt(0, SHIRT_PALETTE.length - 1)];
+    this.pantsColor = PANTS_PALETTE[randInt(0, PANTS_PALETTE.length - 1)];
+    this.skinColor = SKIN_PALETTE[randInt(0, SKIN_PALETTE.length - 1)];
+    this.hairColor = HAIR_PALETTE[randInt(0, HAIR_PALETTE.length - 1)];
+    this.hasHat = random() < 0.25;
     this.hatColor = this.shirtColor;
+    this.umbrellaColor = randInt(0, 1) ? '#ff007f' : '#00f0ff';
 
     this.cowerShake = 0;
   }
@@ -179,9 +184,10 @@
       var dPlayerDist = Math.hypot(dPlayerX, dPlayerY);
 
       if (dPlayerDist < 260 && this.state !== 'cowering' && this.state !== 'fleeing') {
-        if (Math.random() < 0.4) {
+        var pedRng = VC.RNG && VC.RNG.stream ? VC.RNG.stream('pedestrians') : null;
+        if ((pedRng ? pedRng.random() : Math.random()) < 0.4) {
           this.state = 'cowering';
-          this.stateTimer = 3.5 + Math.random() * 2.5;
+          this.stateTimer = 3.5 + (pedRng ? pedRng.random() : Math.random()) * 2.5;
         } else {
           this.state = 'fleeing';
           this.stateTimer = 4.0;
@@ -213,7 +219,7 @@
     // Check if reaching the end of the block sidewalk
     if (this.walkAxis === 'h') {
       if (this.walkDir === 1 && this.x > bx + BLOCK_SIZE + 6) {
-        if (Math.random() < 0.45) {
+        if ((this.rng ? this.rng.random() : Math.random()) < 0.45) {
           // Turn onto vertical sidewalk
           this.walkAxis = 'v';
           this.walkDir = 1;
@@ -226,7 +232,7 @@
           }, (ROAD_WIDTH + 20) / this.walkSpeed * 1000, this);
         }
       } else if (this.walkDir === -1 && this.x < bx - 6) {
-        if (Math.random() < 0.45) {
+        if ((this.rng ? this.rng.random() : Math.random()) < 0.45) {
           this.walkAxis = 'v';
           this.walkDir = -1;
         } else {
@@ -235,14 +241,14 @@
       }
     } else {
       if (this.walkDir === 1 && this.y > by + BLOCK_SIZE + 6) {
-        if (Math.random() < 0.45) {
+        if ((this.rng ? this.rng.random() : Math.random()) < 0.45) {
           this.walkAxis = 'h';
           this.walkDir = -1;
         } else {
           this.state = 'crossing';
         }
       } else if (this.walkDir === -1 && this.y < by - 6) {
-        if (Math.random() < 0.45) {
+        if ((this.rng ? this.rng.random() : Math.random()) < 0.45) {
           this.walkAxis = 'h';
           this.walkDir = 1;
         } else {
@@ -271,11 +277,13 @@
 
     if (this.hasUmbrella) {
       ctx.save();
-      ctx.fillStyle = '#101827';
+      ctx.shadowColor = this.umbrellaColor;
+      ctx.shadowBlur = 5;
+      ctx.fillStyle = this.umbrellaColor || '#101827';
       ctx.beginPath();
-      ctx.arc(0, -13, 10, Math.PI, 0);
-      ctx.lineTo(8, -13);
-      ctx.lineTo(-8, -13);
+      ctx.arc(0, -13, 13, Math.PI, 0);
+      ctx.lineTo(11, -13);
+      ctx.lineTo(-11, -13);
       ctx.closePath();
       ctx.fill();
       ctx.strokeStyle = '#8bdcff';
@@ -354,6 +362,31 @@
     pedestrians: [],
     spawnTimer: 0,
 
+    seedShotCrowd: function(num, player) {
+      if (!player) return;
+      var offsets = [
+        [-105,-82,'h',1], [105,-70,'h',-1], [-150,48,'v',1], [145,58,'v',-1],
+        [-55,118,'h',1], [55,132,'h',-1], [-95,-125,'v',-1], [92,-140,'v',1],
+        [-175,-28,'h',1], [175,-18,'h',-1], [18,-155,'v',1], [-20,155,'v',-1],
+        [205,95,'h',-1], [-205,92,'h',1], [128,170,'v',-1], [-128,-155,'v',1]
+      ];
+      this.pedestrians = [];
+      for (var i = 0; i < Math.min(num, offsets.length); i++) {
+        var o = offsets[i];
+        var ped = new Pedestrian(player.x + o[0], player.y + o[1], o[3] === 1 ? 0 : Math.PI);
+        ped.walkAxis = o[2];
+        ped.walkDir = o[3];
+        ped.hasUmbrella = true;
+        ped.umbrellaColor = i % 3 === 0 ? '#ff007f' : (i % 3 === 1 ? '#00f0ff' : '#ffcc44');
+        if (i % 4 === 1 || i % 5 === 2) {
+          ped.state = 'fleeing';
+          ped.stateTimer = 3.5;
+          ped.heading = i % 2 ? Math.PI : 0;
+        }
+        this.pedestrians.push(ped);
+      }
+    },
+
     init: function() {
       this.pedestrians = [];
       this.spawnTimer = 0;
@@ -395,7 +428,7 @@
     spawnPedestrianAround: function(city, focusX, focusY, rng) {
       if (this.pedestrians.length >= MAX_PEDESTRIANS || !city) return;
 
-      var rand = rng || VC.RNG || new VC.Mulberry32(Math.floor(Math.random() * 100000));
+      var rand = rng || (VC.RNG && VC.RNG.stream ? VC.RNG.stream('pedestrians') : new VC.Mulberry32(1986));
       // Pick a random block near focus
       var blockCandidates = [];
       for (var b = 0; b < city.blocks.length; b++) {

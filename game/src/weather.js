@@ -18,6 +18,9 @@
     thunderTimer: -1,
     rainDrops: [],
     splashes: [],
+    puddleRipples: [],
+    lightningTimer: 9,
+    puddleSeed: null,
 
     init: function(seed) {
       this.state = 'CLEAR';
@@ -31,6 +34,8 @@
       this.lightningTimer = 9;
       this.rainDrops.length = 0;
       this.splashes.length = 0;
+      this.puddleRipples.length = 0;
+      this.puddleSeed = VC.RNG && VC.RNG.stream ? VC.RNG.stream('weather') : null;
       for (var i = 0; i < 260; i++) {
         this.rainDrops.push({
           x: Math.random() * 1280,
@@ -102,6 +107,19 @@
         this.splashes[s].life -= dt;
         if (this.splashes[s].life <= 0) this.splashes.splice(s, 1);
       }
+      // Rain-driven expanding concentric rings, with named-RNG placement for replayability.
+      if (this.rainIntensity > 0.18 && Math.random() < dt * (1 + this.rainIntensity * 6)) {
+        var wrng = this.puddleSeed || (VC.RNG && VC.RNG.stream ? VC.RNG.stream('weather') : null);
+        var px = wrng ? wrng.randFloat(40, 1240) : 640;
+        var py = wrng ? wrng.randFloat(40, 760) : 400;
+        this.puddleRipples.push({ x: px, y: py, radius: 2, life: 1.2, maxLife: 1.2 });
+      }
+      for (var pr = this.puddleRipples.length - 1; pr >= 0; pr--) {
+        var ring = this.puddleRipples[pr];
+        ring.life -= dt;
+        ring.radius += dt * 18;
+        if (ring.life <= 0) this.puddleRipples.splice(pr, 1);
+      }
       if (this.splashes.length > 180) this.splashes.splice(0, this.splashes.length - 180);
 
       if (this.state === 'STORM') {
@@ -109,7 +127,8 @@
         if (this.lightningTimer <= 0) {
           this.lightning = 0.75;
           this.lightningTimer = 5 + Math.random() * 10;
-          this.thunderTimer = 0.25 + Math.random() * 0.8;
+          // Thunder reaches the street 0.6-1.6 seconds after the flash.
+          this.thunderTimer = 0.6 + Math.random() * 1.0;
         }
       } else {
         this.lightningTimer -= dt * 0.35;
@@ -135,6 +154,10 @@
 
     isRaining: function() {
       return this.rainIntensity > 0.12;
+    },
+
+    spawnSplash: function(x, y) {
+      this.splashes.push({ x: x, y: y, life: 0.20, maxLife: 0.20 });
     },
 
     renderGroundReflections: function(ctx, city, view, timeSec) {
@@ -198,8 +221,8 @@
       }
 
       if (this.rainIntensity > 0.05) {
-        ctx.strokeStyle = 'rgba(180,215,255,' + (0.12 + this.rainIntensity * 0.38) + ')';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(195,225,255,' + (0.18 + this.rainIntensity * 0.48) + ')';
+        ctx.lineWidth = 1.35;
         ctx.beginPath();
         var visibleCount = Math.floor(this.rainDrops.length * this.rainIntensity);
         for (var i = 0; i < visibleCount; i++) {
@@ -208,6 +231,18 @@
           ctx.lineTo(d.x + d.drift * 0.025, d.y + d.len);
         }
         ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(190,225,255,0.42)';
+        ctx.lineWidth = 1;
+        for (var rr = 0; rr < this.puddleRipples.length; rr++) {
+          var pring = this.puddleRipples[rr];
+          var prA = pring.life / pring.maxLife;
+          ctx.globalAlpha = prA;
+          ctx.beginPath();
+          ctx.arc(pring.x, pring.y, pring.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
 
         ctx.strokeStyle = 'rgba(170,210,230,' + (0.18 + this.rainIntensity * 0.32) + ')';
         ctx.beginPath();

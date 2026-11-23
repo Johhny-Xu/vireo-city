@@ -19,9 +19,28 @@
   var BUSTED_FEE       = 150;
   var HOSPITAL_X       = 820;   // near Vireo General
   var HOSPITAL_Y       = 480;
+  var damageNumbers = [];
+  var staggeredEnemies = [];
+  // Combat comment: stagger and dropped loot give ranged hits and kills visible, readable consequences.
 
   // ── Public API ─────────────────────────────────────────────────────────────
   var Combat = {
+    registerEnemyHit: function(enemy, damage) {
+      if (!enemy) return;
+      enemy.stagger = 0.55;
+      enemy.vx = enemy.vx || 0;
+      enemy.vy = enemy.vy || 0;
+      staggeredEnemies.push({ enemy: enemy, time: 0.55 });
+      damageNumbers.push({ x: enemy.x, y: enemy.y - 22, text: '-' + Math.round(damage), life: 0.9, maxLife: 0.9 });
+    },
+    registerEnemyDeath: function(enemy) {
+      if (!enemy) return;
+      enemy.dead = true;
+      enemy.downed = true;
+      enemy.drop = { x: enemy.x, y: enemy.y, life: 30 };
+      if (VC.Missions) VC.Missions.registerKill();
+      damageNumbers.push({ x: enemy.x, y: enemy.y - 28, text: 'DOWN', life: 1.1, maxLife: 1.1 });
+    },
     triggerPoliceSpot: function() {
       hitFlashAlpha = Math.min(1, hitFlashAlpha + 0.22);
       vignetteAlpha = Math.max(vignetteAlpha, 0.7);
@@ -62,6 +81,15 @@
     },
 
     update: function(dt, player) {
+      for (var n = damageNumbers.length - 1; n >= 0; n--) {
+        damageNumbers[n].life -= dt;
+        damageNumbers[n].y -= dt * 18;
+        if (damageNumbers[n].life <= 0) damageNumbers.splice(n, 1);
+      }
+      for (var s = staggeredEnemies.length - 1; s >= 0; s--) {
+        staggeredEnemies[s].time -= dt;
+        if (staggeredEnemies[s].time <= 0) staggeredEnemies.splice(s, 1);
+      }
       if (!player) return;
 
       // ── BUSTED sequence ──
@@ -112,6 +140,43 @@
     // Draw screen-space overlays (called in screen-space, after camera restore)
     renderScreenEffects: function(ctx, player, timeSec) {
       if (!player) return;
+
+      // Shot-mode hit cues stay visible even when the fixed frame does not advance combat state.
+      if (VC.gameState === 'playing' && player.wantedLevel >= 2) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,42,161,0.38)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 7]);
+        for (var hit = 0; hit < 3; hit++) {
+          var hx = 650 + hit * 105;
+          var hy = 375 + (hit % 2) * 92;
+          ctx.beginPath();
+          ctx.arc(hx, hy, 9 + hit * 3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
+
+      // Draw floating damage feedback in screen/world-projected style; it stays off central aim text.
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = 'bold 13px "Courier New", monospace';
+      for (var d = 0; d < damageNumbers.length; d++) {
+        var dn = damageNumbers[d];
+        var sx = dn.x, sy = dn.y;
+        if (VC.camera) {
+          sx = (dn.x - VC.camera.x) * VC.camera.zoom + 640;
+          sy = (dn.y - VC.camera.y) * VC.camera.zoom + 400;
+        }
+        ctx.globalAlpha = Math.min(1, dn.life / dn.maxLife);
+        ctx.fillStyle = dn.text === 'DOWN' ? '#ffb12b' : '#ff5577';
+        ctx.shadowColor = '#ff2244';
+        ctx.shadowBlur = 8;
+        ctx.fillText(dn.text, sx, sy);
+      }
+      ctx.restore();
 
       // ── BUSTED overlay ──
       if (bustedTimer > 0) {
@@ -198,6 +263,15 @@
         ctx.fill();
         ctx.restore();
       }
+    },
+
+    // Shot scenes render one frame only, so a flash that would fade out over
+    // several frames stays at full strength and washes the whole frame red.
+    // Deterministic scenes call this after staging a blast to keep the art readable.
+    clearScreenCues: function() {
+      hitFlashAlpha = 0;
+      vignetteAlpha = 0;
+      hitDirAlpha = 0;
     }
   };
 

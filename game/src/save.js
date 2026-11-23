@@ -30,6 +30,8 @@
           weaponKey: VC.Weapons ? VC.Weapons.state.current : 'fists',
           weaponClip: VC.Weapons ? VC.Weapons.state.clip : 0,
           weaponReserve: VC.Weapons ? VC.Weapons.state.reserve : 0,
+          stamina: typeof player.stamina === 'number' ? player.stamina : 100,
+          pickupState: VC.Weapons ? VC.Weapons.getSaveData ? VC.Weapons.getSaveData() : null : null,
           missions: VC.Missions ? VC.Missions.toSaveData() : null,
           ts: Date.now()
         };
@@ -58,6 +60,7 @@
         player.health = typeof data.health === 'number' ? data.health : 100;
         player.armor  = typeof data.armor  === 'number' ? data.armor  : 0;
         player.cash   = typeof data.cash   === 'number' ? data.cash   : 0;
+        player.stamina = typeof data.stamina === 'number' ? data.stamina : player.maxStamina;
 
         if (VC.wanted && typeof data.wantedLevel === 'number') {
           VC.wanted.setLevel(data.wantedLevel, player);
@@ -69,6 +72,7 @@
           VC.Weapons.equip(data.weaponKey);
           if (typeof data.weaponClip    === 'number') VC.Weapons.state.clip    = data.weaponClip;
           if (typeof data.weaponReserve === 'number') VC.Weapons.state.reserve = data.weaponReserve;
+          if (data.pickupState && VC.Weapons.fromSaveData) VC.Weapons.fromSaveData(data.pickupState);
         }
 
         if (VC.Missions && data.missions) {
