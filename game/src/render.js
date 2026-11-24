@@ -210,7 +210,13 @@
 
     renderGroundSurfaces: function(ctx, city, view, timeSec) {
       // 1. Sidewalk bases under blocks
-      ctx.fillStyle = VC.PALETTE.sidewalkBase;
+      if (VC.driveShot) {
+        ctx.fillStyle = '#465668';
+      } else if (VC.dusk) {
+        ctx.fillStyle = '#354153';
+      } else {
+        ctx.fillStyle = VC.PALETTE.sidewalkBase;
+      }
       for (var s = 0; s < city.sidewalks.length; s++) {
         var sw = city.sidewalks[s];
         if (sw.x + sw.w < view.left || sw.x > view.right ||
@@ -219,13 +225,13 @@
         ctx.fillRect(sw.x, sw.y, sw.w, sw.h);
 
         // Curb highlight edge
-        ctx.strokeStyle = VC.PALETTE.curbHighlight;
+        ctx.strokeStyle = VC.driveShot ? '#7e93a5' : (VC.dusk ? '#63718a' : VC.PALETTE.curbHighlight);
         ctx.lineWidth = 1.5;
         ctx.strokeRect(sw.x, sw.y, sw.w, sw.h);
       }
 
       // 2. Asphalt Road surfaces
-      ctx.fillStyle = VC.PALETTE.asphaltBase;
+      ctx.fillStyle = VC.driveShot ? '#263442' : (VC.dusk ? '#202735' : VC.PALETTE.asphaltBase);
       for (var r = 0; r < city.roads.length; r++) {
         var rd = city.roads[r];
         if (rd.x + rd.w < view.left || rd.x > view.right ||
@@ -482,9 +488,23 @@
         // Building main rooftop surface
         ctx.fillStyle = b.roofColor;
         ctx.fillRect(b.x, b.y, b.w, b.h);
+        if (VC.driveShot) {
+          ctx.save();
+          ctx.globalAlpha = 0.18;
+          ctx.fillStyle = '#4d6678';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.restore();
+        }
+        if (VC.dusk) {
+          ctx.save();
+          ctx.globalAlpha = 0.24;
+          ctx.fillStyle = '#c17d5d';
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.restore();
+        }
 
         // Outer parapet wall rim
-        ctx.strokeStyle = VC.PALETTE.roofParapet;
+        ctx.strokeStyle = VC.driveShot ? '#71879a' : (VC.dusk ? '#9a8176' : VC.PALETTE.roofParapet);
         ctx.lineWidth = 4;
         ctx.strokeRect(b.x, b.y, b.w, b.h);
 
@@ -514,7 +534,7 @@
             ctx.fillRect(wx, wy, ww, wh);
             ctx.restore();
           } else {
-            ctx.fillStyle = VC.PALETTE.windowDark;
+            ctx.fillStyle = VC.driveShot ? '#263746' : (VC.dusk ? '#171b24' : VC.PALETTE.windowDark);
             ctx.fillRect(wx, wy, ww, wh);
           }
         }
@@ -1022,6 +1042,20 @@
         if (dcar.x < view.left - 140 || dcar.x > view.right + 140 ||
             dcar.y < view.top - 140 || dcar.y > view.bottom + 140) continue;
 
+        if (VC.driveShot) {
+          ctx.save();
+          ctx.translate(dcar.x, dcar.y);
+          ctx.rotate(dcar.heading);
+          var isPlayerCar = curPlayer && dcar === curPlayer.vehicle;
+          ctx.strokeStyle = isPlayerCar ? 'rgba(255,244,205,0.78)' : 'rgba(181,226,238,0.55)';
+          ctx.lineWidth = isPlayerCar ? 2 : 1.25;
+          ctx.shadowColor = isPlayerCar ? '#fff1bd' : '#78cfe0';
+          ctx.shadowBlur = isPlayerCar ? 10 : 6;
+          VC.roundRect(ctx, -dcar.w / 2 - 2, -dcar.h / 2 - 2, dcar.w + 4, dcar.h + 4, 6);
+          ctx.stroke();
+          ctx.restore();
+        }
+
         if (dcar.lightsOn) {
           ctx.save();
           ctx.translate(dcar.x, dcar.y);
@@ -1062,7 +1096,7 @@
           ctx,
           sign.x,
           sign.y,
-          100,
+          VC.driveShot ? 160 : 100,
           sign.glow || 'rgba(0, 240, 255, 0.45)',
           'rgba(0,0,0,0)'
         );

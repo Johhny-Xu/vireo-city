@@ -52,6 +52,7 @@
     VC.coverSign = false;
     VC.hiddenSignText = null;
     VC.dusk = false;
+    VC.driveShot = false;
 
     var actualSeed = seed ? parseInt(seed, 10) : 1986;
     if (isNaN(actualSeed)) actualSeed = 1986;
@@ -231,9 +232,12 @@
 
     // ── drive ──────────────────────────────────────────────────────────────
     } else if (shot === 'drive') {
+      VC.driveShot = true;
       var driveX = 840, driveY = 723.5;
-      var muscleCar = new VC.Vehicle('ronin', driveX, driveY, 0);
-      muscleCar.speed = 195; muscleCar.vx = 195; muscleCar.vy = 0;
+      var muscleCar = new VC.Vehicle('ronin', driveX, driveY, -Math.PI * 0.25);
+      muscleCar.speed = 300;
+      muscleCar.vx = 212;
+      muscleCar.vy = -212;
       muscleCar.lightsOn = true;
       if (VC.addSkidmark) {
         VC.addSkidmark(720, 715, 815, 715, 0.55);
@@ -242,11 +246,34 @@
       basePlayingScene(driveX, driveY, 4850, 95, 60, 1);
       VC.player.vehicle = muscleCar;
       muscleCar.driver = VC.player;
-      VC.camera.snapTo(driveX + 90, driveY);
-      VC.camera.zoom = 1.12; VC.camera.leadDist = 150;
+      VC.player.facing = -Math.PI * 0.25;
+      VC.player.vx = 212;
+      VC.player.vy = -212;
+      VC.camera.snapTo(driveX - 18, driveY + 42);
+      VC.camera.zoom = 2.2;
+      VC.camera.leadDist = 60;
+      shotCamera = { zoom: 2.2, leadDist: 60 };
       VC.Input.mouse.screenX = 640; VC.Input.mouse.screenY = 400;
       gameTime = 4.8;
       if (VC.hud) VC.hud.toast('SPEED LIMIT EXCEEDED // PATROL ALERT', 3.0);
+      if (VC.weather) VC.weather.forceState('CLEAR');
+
+      if (VC.traffic) {
+        var driveFlowOne = new VC.Vehicle('kestrel', 955, 650, -Math.PI * 0.18);
+        driveFlowOne.speed = 220; driveFlowOne.vx = 210; driveFlowOne.vy = -66;
+        driveFlowOne.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: driveFlowOne });
+
+        var driveFlowTwo = new VC.Vehicle('cab', 730, 770, -Math.PI * 0.08);
+        driveFlowTwo.speed = 190; driveFlowTwo.vx = 188; driveFlowTwo.vy = -15;
+        driveFlowTwo.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: driveFlowTwo });
+
+        var driveFlowThree = new VC.Vehicle('sable', 1015, 760, Math.PI * 0.92);
+        driveFlowThree.speed = 175; driveFlowThree.vx = -171; driveFlowThree.vy = 37;
+        driveFlowThree.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: driveFlowThree });
+      }
 
     // ── hud / end ──────────────────────────────────────────────────────────
     } else if (shot === 'hud' || shot === 'end') {
@@ -405,6 +432,68 @@
       if (VC.weather) VC.weather.forceState('STORM');
       if (VC.PoliceAir) VC.PoliceAir.seedOverhead(chaseX, chaseY, 0);
 
+    // ── hero (cover) ─────────────────────────────────────────────────────────
+    } else if (shot === 'hero') {
+      VC.dusk = true;
+      VC.coverSign = true;
+      VC.hiddenSignText = ['SYNTH TAXI'];
+      basePlayingScene(2385, 905, 2400, 100, 40, 0);
+      VC.player.facing = -Math.PI * 0.5;
+      VC.camera.snapTo(2600, 870);
+      VC.camera.zoom = 1.62;
+      shotCamera = { zoom: 1.62, leadDist: 90 };
+      var heroCar = new VC.Vehicle('kestrel', 2330, 900, 0.05);
+      heroCar.speed = 0;
+      heroCar.lightsOn = true;
+      if (VC.weather) VC.weather.forceState('CLEAR');
+      gameTime = 5.2;
+
+      if (VC.dusk && VC.traffic) {
+        var heroTraffic = new VC.Vehicle('ronin', 2470, 950, 0.05);
+        heroTraffic.speed = 68;
+        heroTraffic.vx = 68;
+        heroTraffic.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: heroTraffic });
+      }
+
+      if (VC.dusk && VC.pedestrians) {
+        VC.pedestrians.MAX_PEDESTRIANS = 12;
+        VC.pedestrians.initDeterministic(VC.city, VC.player);
+        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(4, VC.player);
+        var heroPedPositions = [
+          [2290,940], [2350,860], [2420,980], [2470,840]
+        ];
+        for (var hpi = 0; hpi < heroPedPositions.length && hpi < VC.pedestrians.pedestrians.length; hpi++) {
+          var heroPed = VC.pedestrians.pedestrians[hpi];
+          heroPed.x = heroPedPositions[hpi][0];
+          heroPed.y = heroPedPositions[hpi][1];
+          heroPed.hasUmbrella = false;
+          heroPed.walkAxis = hpi % 2 ? 'v' : 'h';
+          heroPed.heading = hpi % 2 ? Math.PI : 0;
+          heroPed.state = 'walking';
+          heroPed.stateTimer = 0;
+        }
+      }
+
+      if (VC.dusk && VC.police) {
+        VC.police.seedState(1, VC.player);
+        if (VC.police.cruisers.length >= 1) {
+          var heroCruiser = VC.police.cruisers[0];
+          heroCruiser.vehicle.x = 2215;
+          heroCruiser.vehicle.y = 795;
+          heroCruiser.vehicle.heading = 0.12;
+          heroCruiser.vehicle.speed = 0;
+          heroCruiser.vehicle.typeKey = 'interceptor';
+          heroCruiser.vehicle.isPolice = true;
+          heroCruiser.vehicle.sirenOn = true;
+          heroCruiser.vehicle.lightsOn = true;
+          heroCruiser.vehicle.pursuitLights = true;
+          heroCruiser.sirenPhase = 0;
+        }
+      }
+      if (VC.wanted) VC.wanted.setLevel(2, VC.player);
+      VC.player.wantedLevel = 2;
+
     // ── dusk (new) ──────────────────────────────────────────────────────────
     } else if (shot === 'dusk') {
       VC.dusk = true;
@@ -457,6 +546,20 @@
       VC.player.vx = 240;
       VC.player.vy = 0;
       VC.player.facing = 0.1;
+    }
+    if (shotType === 'drive' && VC.player && VC.player.vehicle) {
+      var driveCar = VC.player.vehicle;
+      driveCar.speed = 300;
+      driveCar.vx = 212;
+      driveCar.vy = -212;
+      driveCar.heading = -Math.PI * 0.25;
+      driveCar.health = driveCar.maxHealth;
+      driveCar.damageFlash = 0;
+      driveCar.lightsOn = true;
+      VC.player.health = VC.player.maxHealth;
+      VC.player.vx = 212;
+      VC.player.vy = -212;
+      VC.player.facing = -Math.PI * 0.25;
     }
     // Restore the requested camera only after the settle update has run,
     // since Player.update resets zoom and lead distance for vehicle/on-foot branches.
@@ -810,7 +913,7 @@
     }
 
     // Shot mode
-    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight','dusk'].indexOf(shot) !== -1) {
+    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight','dusk','hero'].indexOf(shot) !== -1) {
       setupDeterministicShot(shot, seed);
       render();
       return;

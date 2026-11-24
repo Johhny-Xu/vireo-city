@@ -1,5 +1,5 @@
 # Vireo City (Johhny-Xu/vireo-city)
-<!-- Screenshot-first documentation: the review build exposes deterministic chase, street, firefight, and title scenes. -->
+<!-- Screenshot-first documentation: the review build exposes deterministic chase, street, firefight, and drive scenes. -->
 
 [![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 [![rank](https://make.fun/badge/gta6-01/Johhny-Xu/vireo-city/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
@@ -98,16 +98,17 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
   "file://$PWD/game/index.html?shot=chase&seed=11"
 ```
 
-Repeat with `street`, `firefight`, and `title`, then place the resulting images in
-`screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-title.jpg`. The `chase`
-image is the cover. `1-chase.jpg` shows a rainy-night pursuit with the player in a Kestrel,
-5-star wanted level, three explosions, a VPD helicopter searchlight, police roadblocks, a mission
-target marker, and umbrella-carrying pedestrians. `2-street.jpg` shows a walking street view with
-dense umbrella-carrying pedestrians, sidewalks, taxis, and neon signs. `3-combat.jpg` shows a
-firefight with enemies, projectiles, muzzle flashes, a downed enemy, and the shotgun HUD.
-`4-title.jpg` shows the title screen with save progress, weapon unlock count, the eight-mission
-story, and control hints. The review-safe shot names are `chase`, `street`, `firefight`, and
-`title`, and the fixed seed makes each result repeatable.
+Repeat with `street`, `firefight`, and `drive`, then place the resulting images in
+`screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-drive.jpg`. The `chase`
+image is the cover. `1-chase.jpg` shows a golden-dusk harbor panorama over a warm coastal city,
+with the ocean, palm trees, the player walking in an amber jacket, a parked Kestrel, a red-and-blue
+VPD police car, a yellow TAXI, and the complete HUD including status, cash, wanted stars, minimap,
+and radio panel. `2-street.jpg` shows a walking night-street scene through crowds, with umbrella-
+carrying pedestrians, vehicles, and storefront signs. `3-combat.jpg` shows a firefight with the
+player firing, an aiming line, explosions, damage numbers, and the HUD. `4-drive.jpg` shows a
+nighttime neon-district drive in a stolen car, with headlights, taillights, road traffic, fog, and
+the complete HUD. The review-safe shot names are `chase`, `street`, `firefight`, and `drive`, and
+the fixed seed makes each result repeatable.
 
 ## Submission structure
 
