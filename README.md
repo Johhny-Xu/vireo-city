@@ -98,17 +98,19 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
   "file://$PWD/game/index.html?shot=chase&seed=11"
 ```
 
-Repeat with `street`, `firefight`, and `drive`, then place the four outputs in `screenshots/` as
+Repeat with `golden`, `firefight`, and `drive`, then place the four outputs in `screenshots/` as
 `1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-drive.jpg`. The fixed seed keeps every
 review shot repeatable.
 
 `1-chase.jpg` is the cover: a golden-dusk, harbor-side panorama of Vireo City at the start of a
 chase, with warm coastal skyline, ocean reflections, palm silhouettes, and a dramatic player
-vehicle composition. `2-street.jpg` is a night-street crowd shot, showing walking pedestrians,
-umbrellas, traffic, storefront neon, and the playable HUD. `3-combat.jpg` is an active firefight
-frame, with the player aiming and firing, enemy tracers, impact effects, damage feedback, and the
-combat interface. `4-drive.jpg` is a nighttime neon-district drive, featuring city traffic,
-headlights and taillights, street fog, reflective pavement, and a full-speed vehicle HUD.
+vehicle composition. It presents multiple systems at once with missions, wanted stars, the
+minimap, radio, traffic, and police vehicles. `2-street.jpg` is a golden-hour, clear-weather
+city street, showing traffic, pedestrians, a taxi, a VPD police cruiser, two wanted stars, and
+the complete HUD. `3-combat.jpg` is an active nighttime firefight frame, with the player aiming
+and firing, enemy tracers, impact effects, damage feedback, and the combat interface.
+`4-drive.jpg` is a nighttime neon-district drive, featuring city traffic, headlights and
+tail lights, street fog, reflective pavement, and a full-speed vehicle HUD.
 
 ## Submission structure
 

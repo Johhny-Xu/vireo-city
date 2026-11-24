@@ -520,6 +520,97 @@
       if (VC.weather) VC.weather.forceState('CLEAR');
       gameTime = 5.2;
 
+    // ── golden (dusk, clear) ───────────────────────────────────────────────
+    } else if (shot === 'golden') {
+      VC.dusk = true;
+      var goldenX = 740, goldenY = 705;
+      basePlayingScene(goldenX, goldenY, 3400, 100, 50, 2);
+      VC.player.facing = -Math.PI * 0.25;
+
+      VC.camera.snapTo(goldenX, goldenY);
+      VC.camera.zoom = 2.2;
+      shotCamera = { zoom: 2.2, leadDist: 70 };
+      VC.Input.mouse.screenX = 720; VC.Input.mouse.screenY = 320;
+      gameTime = 4.6;
+
+      if (VC.weather) VC.weather.forceState('CLEAR');
+
+      var nearCab = new VC.Vehicle('cab', 785, 723.5, 0);
+      nearCab.speed = 0;
+      nearCab.lightsOn = true;
+      VC.player.nearVehicle = nearCab;
+
+      if (VC.traffic) {
+        VC.traffic.vehicles.push({ vehicle: nearCab });
+
+        var goldenFlowOne = new VC.Vehicle('kestrel', 825, 650, -Math.PI * 0.12);
+        goldenFlowOne.speed = 95;
+        goldenFlowOne.vx = 93;
+        goldenFlowOne.vy = -18;
+        goldenFlowOne.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: goldenFlowOne });
+
+        var goldenFlowTwo = new VC.Vehicle('cab', 640, 758, Math.PI * 0.88);
+        goldenFlowTwo.speed = 118;
+        goldenFlowTwo.vx = -116;
+        goldenFlowTwo.vy = 35;
+        goldenFlowTwo.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: goldenFlowTwo });
+
+        var goldenFlowThree = new VC.Vehicle('sable', 870, 790, -Math.PI * 0.04);
+        goldenFlowThree.speed = 72;
+        goldenFlowThree.vx = 72;
+        goldenFlowThree.vy = -3;
+        goldenFlowThree.lightsOn = true;
+        VC.traffic.vehicles.push({ vehicle: goldenFlowThree });
+      }
+
+      if (VC.pedestrians) {
+        VC.pedestrians.MAX_PEDESTRIANS = 18;
+        VC.pedestrians.initDeterministic(VC.city, VC.player);
+        if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(16, VC.player);
+        var goldenPedPositions = [
+          [650,625], [690,665], [620,710], [680,755],
+          [770,620], [815,650], [790,680], [835,710],
+          [715,790], [760,760], [610,780], [850,635],
+          [890,705], [605,650], [875,755], [730,830]
+        ];
+        for (var gpi = 0; gpi < goldenPedPositions.length && gpi < VC.pedestrians.pedestrians.length; gpi++) {
+          var goldenPed = VC.pedestrians.pedestrians[gpi];
+          goldenPed.x = goldenPedPositions[gpi][0];
+          goldenPed.y = goldenPedPositions[gpi][1];
+          goldenPed.walkAxis = gpi % 2 ? 'v' : 'h';
+          goldenPed.walkDir = gpi % 3 === 0 ? -1 : 1;
+          goldenPed.heading = goldenPed.walkDir === 1 ? 0 : Math.PI;
+          goldenPed.state = 'walking';
+          goldenPed.stateTimer = 0;
+          goldenPed.hasUmbrella = false;
+        }
+      }
+
+      if (VC.police) {
+        var goldenPoliceCruiser = new VC.Vehicle('interceptor', 655, 688, 0.5);
+        goldenPoliceCruiser.speed = 0;
+        goldenPoliceCruiser.vx = 0;
+        goldenPoliceCruiser.vy = 0;
+        goldenPoliceCruiser.lightsOn = true;
+        goldenPoliceCruiser.sirenOn = true;
+        goldenPoliceCruiser.isPolice = true;
+        goldenPoliceCruiser.pursuitLights = false;
+        VC.police.cruisers.length = 0;
+        VC.police.cruisers.push({
+          vehicle: goldenPoliceCruiser,
+          shootTimer: 1.4,
+          sirenPhase: 0,
+          state: 'chase',
+          disabled: false,
+          heavy: false
+        });
+      }
+
+      if (VC.wanted) VC.wanted.setLevel(2, VC.player);
+      VC.player.wantedLevel = 2;
+
     // ── mission (new) ──────────────────────────────────────────────────────
     } else if (shot === 'mission') {
       var missionX = 740, missionY = 705;
@@ -590,7 +681,7 @@
 
     } else if (VC.gameState === 'playing') {
       // Keep the shot-only street interceptor flashing even with wanted level 0.
-      if (shotType === 'street' && VC.police && VC.police.cruisers) {
+      if ((shotType === 'street' || shotType === 'golden') && VC.police && VC.police.cruisers) {
         for (var sci = 0; sci < VC.police.cruisers.length; sci++) {
           var streetCruiser = VC.police.cruisers[sci];
           if (streetCruiser && streetCruiser.vehicle) {
@@ -924,7 +1015,7 @@
     }
 
     // Shot mode
-    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight','dusk','hero'].indexOf(shot) !== -1) {
+    if (shot && ['title','start','street','play','drive','hud','end','chase','mission','firefight','dusk','hero','golden'].indexOf(shot) !== -1) {
       setupDeterministicShot(shot, seed);
       render();
       return;
