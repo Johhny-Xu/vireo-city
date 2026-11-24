@@ -12,16 +12,16 @@
   var ROWS = 7;
 
   var NEON_NAMES = [
-    { text: 'NEON COVE', color: '#00f0ff', glow: 'rgba(0,240,255,0.7)', sub: 'HOTEL & LOUNGE' },
-    { text: 'SYNTH TAXI', color: '#ffaa00', glow: 'rgba(255,170,0,0.7)', sub: '24/7 CAB SERVICE' },
-    { text: 'HYPERION', color: '#ff007f', glow: 'rgba(255,0,127,0.7)', sub: 'TOWER SUITES' },
-    { text: 'VIREO CASINO', color: '#39ff14', glow: 'rgba(57,255,20,0.7)', sub: 'SLOTS & CARDS' },
-    { text: 'OCEANIC CLUB', color: '#00e5ff', glow: 'rgba(0,229,255,0.7)', sub: 'NIGHTCLUB' },
-    { text: 'KOBRA DINER', color: '#ff3366', glow: 'rgba(255,51,102,0.7)', sub: 'OPEN ALL NIGHT' },
-    { text: 'TURBO MOTORS', color: '#ffbb00', glow: 'rgba(255,187,0,0.7)', sub: 'EXOTIC CAR IMPORTS' },
-    { text: 'AZURE PALMS', color: '#b347ff', glow: 'rgba(179,71,255,0.7)', sub: 'CONDOMINIUMS' },
-    { text: 'HORIZON DECK', color: '#00f0ff', glow: 'rgba(0,240,255,0.7)', sub: 'ROOFTOP BAR' },
-    { text: 'MIRAGE SPA', color: '#ff00aa', glow: 'rgba(255,0,170,0.7)', sub: 'WELLNESS' }
+    { text: 'SYNTH TAXI', color: '#ffaa00', glow: 'rgba(255,170,0,0.72)', sub: '24/7 CAB SERVICE' },
+    { text: 'VIREO CASINO', color: '#39ff14', glow: 'rgba(57,255,20,0.68)', sub: 'SLOTS & CARDS' },
+    { text: 'OCEANIC CLUB', color: '#00e5ff', glow: 'rgba(0,229,255,0.70)', sub: 'NIGHTCLUB' },
+    { text: 'NEON COVE', color: '#00f0ff', glow: 'rgba(0,240,255,0.68)', sub: 'HOTEL & LOUNGE' },
+    { text: 'HYPERION', color: '#ff007f', glow: 'rgba(255,0,127,0.72)', sub: 'TOWER SUITES' },
+    { text: 'HORIZON DECK', color: '#00f0ff', glow: 'rgba(0,240,255,0.68)', sub: 'ROOFTOP BAR' },
+    { text: 'TURBO MOTORS', color: '#ffbb00', glow: 'rgba(255,187,0,0.72)', sub: 'EXOTIC CAR IMPORTS' },
+    { text: 'KOBRA DINER', color: '#ff3366', glow: 'rgba(255,51,102,0.70)', sub: 'OPEN ALL NIGHT' },
+    { text: 'AZURE PALMS', color: '#b347ff', glow: 'rgba(179,71,255,0.70)', sub: 'CONDOMINIUMS' },
+    { text: 'MIRAGE SPA', color: '#ff00aa', glow: 'rgba(255,0,170,0.68)', sub: 'WELLNESS' }
   ];
 
   function generateCity(seed) {

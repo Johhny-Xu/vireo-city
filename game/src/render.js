@@ -210,10 +210,10 @@
 
     renderGroundSurfaces: function(ctx, city, view, timeSec) {
       // 1. Sidewalk bases under blocks
-      if (VC.driveShot) {
-        ctx.fillStyle = '#465668';
-      } else if (VC.dusk) {
+      if (VC.dusk) {
         ctx.fillStyle = '#354153';
+      } else if (VC.driveShot) {
+        ctx.fillStyle = '#465668';
       } else {
         ctx.fillStyle = VC.PALETTE.sidewalkBase;
       }
@@ -225,13 +225,21 @@
         ctx.fillRect(sw.x, sw.y, sw.w, sw.h);
 
         // Curb highlight edge
-        ctx.strokeStyle = VC.driveShot ? '#7e93a5' : (VC.dusk ? '#63718a' : VC.PALETTE.curbHighlight);
+        if (VC.dusk) {
+          ctx.strokeStyle = '#63718a';
+        } else {
+          ctx.strokeStyle = VC.driveShot ? '#7e93a5' : VC.PALETTE.curbHighlight;
+        }
         ctx.lineWidth = 1.5;
         ctx.strokeRect(sw.x, sw.y, sw.w, sw.h);
       }
 
       // 2. Asphalt Road surfaces
-      ctx.fillStyle = VC.driveShot ? '#263442' : (VC.dusk ? '#202735' : VC.PALETTE.asphaltBase);
+      if (VC.dusk) {
+        ctx.fillStyle = '#202735';
+      } else {
+        ctx.fillStyle = VC.driveShot ? '#263442' : VC.PALETTE.asphaltBase;
+      }
       for (var r = 0; r < city.roads.length; r++) {
         var rd = city.roads[r];
         if (rd.x + rd.w < view.left || rd.x > view.right ||
@@ -504,7 +512,11 @@
         }
 
         // Outer parapet wall rim
-        ctx.strokeStyle = VC.driveShot ? '#71879a' : (VC.dusk ? '#9a8176' : VC.PALETTE.roofParapet);
+        if (VC.dusk) {
+          ctx.strokeStyle = '#9a8176';
+        } else {
+          ctx.strokeStyle = VC.driveShot ? '#71879a' : VC.PALETTE.roofParapet;
+        }
         ctx.lineWidth = 4;
         ctx.strokeRect(b.x, b.y, b.w, b.h);
 
@@ -534,7 +546,11 @@
             ctx.fillRect(wx, wy, ww, wh);
             ctx.restore();
           } else {
-            ctx.fillStyle = VC.driveShot ? '#263746' : (VC.dusk ? '#171b24' : VC.PALETTE.windowDark);
+            if (VC.dusk) {
+              ctx.fillStyle = '#171b24';
+            } else {
+              ctx.fillStyle = VC.driveShot ? '#263746' : VC.PALETTE.windowDark;
+            }
             ctx.fillRect(wx, wy, ww, wh);
           }
         }

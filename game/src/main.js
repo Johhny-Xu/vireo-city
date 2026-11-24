@@ -437,22 +437,27 @@
       VC.dusk = true;
       VC.coverSign = true;
       VC.hiddenSignText = ['SYNTH TAXI'];
+
       basePlayingScene(2385, 905, 2400, 100, 40, 0);
       VC.player.facing = -Math.PI * 0.5;
+
       VC.camera.snapTo(2600, 870);
       VC.camera.zoom = 1.62;
       shotCamera = { zoom: 1.62, leadDist: 90 };
+
       var heroCar = new VC.Vehicle('kestrel', 2330, 900, 0.05);
       heroCar.speed = 0;
       heroCar.lightsOn = true;
+
       if (VC.weather) VC.weather.forceState('CLEAR');
       gameTime = 5.2;
 
       if (VC.dusk && VC.traffic) {
         var heroTraffic = new VC.Vehicle('ronin', 2470, 950, 0.05);
         heroTraffic.speed = 68;
-        heroTraffic.vx = 68;
         heroTraffic.lightsOn = true;
+        heroTraffic.vx = 68;
+        heroTraffic.vy = 0;
         VC.traffic.vehicles.push({ vehicle: heroTraffic });
       }
 
@@ -460,6 +465,7 @@
         VC.pedestrians.MAX_PEDESTRIANS = 12;
         VC.pedestrians.initDeterministic(VC.city, VC.player);
         if (VC.pedestrians.seedShotCrowd) VC.pedestrians.seedShotCrowd(4, VC.player);
+
         var heroPedPositions = [
           [2290,940], [2350,860], [2420,980], [2470,840]
         ];
@@ -487,25 +493,30 @@
           heroCruiser.vehicle.isPolice = true;
           heroCruiser.vehicle.sirenOn = true;
           heroCruiser.vehicle.lightsOn = true;
-          heroCruiser.vehicle.pursuitLights = true;
-          heroCruiser.sirenPhase = 0;
+          heroCruiser.vehicle.pursuitLights = false;
+          heroCruiser.sirenPhase = NaN;
         }
       }
+
       if (VC.wanted) VC.wanted.setLevel(2, VC.player);
       VC.player.wantedLevel = 2;
 
-    // ── dusk (new) ──────────────────────────────────────────────────────────
+    // ── dusk ────────────────────────────────────────────────────────────────
     } else if (shot === 'dusk') {
       VC.dusk = true;
       var duskX = 2385, duskY = 905;
+
       basePlayingScene(duskX, duskY, 2400, 100, 40, 0);
       VC.player.facing = -Math.PI * 0.5;
+
       VC.camera.snapTo(2600, 870);
       VC.camera.zoom = 1.62;
       shotCamera = { zoom: 1.62, leadDist: 90 };
+
       var duskCar = new VC.Vehicle('kestrel', 2330, 900, 0.05);
       duskCar.speed = 0;
       duskCar.lightsOn = true;
+
       if (VC.weather) VC.weather.forceState('CLEAR');
       gameTime = 5.2;
 

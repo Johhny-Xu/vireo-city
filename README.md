@@ -98,17 +98,17 @@ google-chrome --headless=new --no-sandbox --disable-gpu \
   "file://$PWD/game/index.html?shot=chase&seed=11"
 ```
 
-Repeat with `street`, `firefight`, and `drive`, then place the resulting images in
-`screenshots/` as `1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-drive.jpg`. The `chase`
-image is the cover. `1-chase.jpg` shows a golden-dusk harbor panorama over a warm coastal city,
-with the ocean, palm trees, the player walking in an amber jacket, a parked Kestrel, a red-and-blue
-VPD police car, a yellow TAXI, and the complete HUD including status, cash, wanted stars, minimap,
-and radio panel. `2-street.jpg` shows a walking night-street scene through crowds, with umbrella-
-carrying pedestrians, vehicles, and storefront signs. `3-combat.jpg` shows a firefight with the
-player firing, an aiming line, explosions, damage numbers, and the HUD. `4-drive.jpg` shows a
-nighttime neon-district drive in a stolen car, with headlights, taillights, road traffic, fog, and
-the complete HUD. The review-safe shot names are `chase`, `street`, `firefight`, and `drive`, and
-the fixed seed makes each result repeatable.
+Repeat with `street`, `firefight`, and `drive`, then place the four outputs in `screenshots/` as
+`1-chase.jpg`, `2-street.jpg`, `3-combat.jpg`, and `4-drive.jpg`. The fixed seed keeps every
+review shot repeatable.
+
+`1-chase.jpg` is the cover: a golden-dusk, harbor-side panorama of Vireo City at the start of a
+chase, with warm coastal skyline, ocean reflections, palm silhouettes, and a dramatic player
+vehicle composition. `2-street.jpg` is a night-street crowd shot, showing walking pedestrians,
+umbrellas, traffic, storefront neon, and the playable HUD. `3-combat.jpg` is an active firefight
+frame, with the player aiming and firing, enemy tracers, impact effects, damage feedback, and the
+combat interface. `4-drive.jpg` is a nighttime neon-district drive, featuring city traffic,
+headlights and taillights, street fog, reflective pavement, and a full-speed vehicle HUD.
 
 ## Submission structure
 
